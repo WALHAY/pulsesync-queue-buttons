@@ -11,19 +11,19 @@
   const BUTTON = 'ps-queue-button';
   const OWN_ELEMENTS = `.${BUTTON}, .ps-queue-status`;
   const POINTER_EVENTS = ['dblclick', 'pointerdown', 'pointerup', 'mousedown', 'mouseup'];
-  // Keep Play next closest to Like, with Add to end just before it.
+  // Track-row order: Play next, Add to end, Like.
   const ACTIONS = [
-    {
-      key: 'last',
-      method: 'injectLast',
-      icon: 'playLast_xxs',
-      testId: 'PULSESYNC_ADD_TO_QUEUE_BUTTON',
-    },
     {
       key: 'next',
       method: 'injectNext',
       icon: 'playNext_xxs',
       testId: 'PULSESYNC_PLAY_NEXT_BUTTON',
+    },
+    {
+      key: 'last',
+      method: 'injectLast',
+      icon: 'playLast_xxs',
+      testId: 'PULSESYNC_ADD_TO_QUEUE_BUTTON',
     },
   ];
   const sourceScript = document.currentScript;
@@ -162,6 +162,19 @@
     return { track, player };
   }
 
+  function sourceContext(track, row) {
+    // Use the native menu's album/track fallback. My Vibe needs this context
+    // to distinguish manual additions from its recommendation batch.
+    const [id, albumId] = track.entityId.split(':');
+    return {
+      type: albumId ? 'album' : 'various',
+      from: '',
+      meta: { id: albumId || id },
+      sourceContextType:
+        row.dataset.testId === 'SEARCH_TRACK_CARD' ? 'SEARCH' : 'BASED_ON_ENTITY_BY_DEFAULT',
+    };
+  }
+
   async function queueTrack(button, like, action) {
     if (button.getAttribute('aria-busy') === 'true' || !like.isConnected) return;
     const row = like.closest(ROW);
@@ -175,6 +188,7 @@
       // Do not start playback or replace the current playback context.
       await player[action.method]({
         entitiesData: [{ type: 'unloaded', meta: { id: track.entityId } }],
+        sourceContextData: sourceContext(track, row),
       });
       announce(`${messages()[action.key].added}${track.title ? `: ${track.title}` : ''}`);
     } catch (error) {

@@ -45,7 +45,7 @@ test.beforeEach(async ({ page }) => {
   await page.addScriptTag({ path: addon });
 });
 
-test('places both buttons left of Like, keeping Play next closest, on all three surfaces', async ({
+test('places both buttons left of Like, keeping Add to end closest, on all three surfaces', async ({
   page,
 }) => {
   await expect(page.locator(next)).toHaveCount(3);
@@ -58,20 +58,20 @@ test('places both buttons left of Like, keeping Play next closest, on all three 
     await expect(row.locator(last)).toBeVisible();
     await expect(row.locator(last)).toHaveAccessibleName('Add to end of queue');
     expect(await row.locator(last).evaluate(node => node.nextElementSibling?.dataset.testId)).toBe(
-      'PULSESYNC_PLAY_NEXT_BUTTON',
-    );
-    expect(await button.evaluate(node => node.nextElementSibling?.dataset.testId)).toBe(
       'LIKE_BUTTON',
     );
-    const [end, left, right] = await Promise.all([
-      row.locator(last).boundingBox(),
+    expect(await button.evaluate(node => node.nextElementSibling?.dataset.testId)).toBe(
+      'PULSESYNC_ADD_TO_QUEUE_BUTTON',
+    );
+    const [nextBox, endBox, likeBox] = await Promise.all([
       button.boundingBox(),
+      row.locator(last).boundingBox(),
       row.locator(like).boundingBox(),
     ]);
-    expect(end.x + end.width).toBeLessThanOrEqual(left.x);
-    expect(end.y).toBe(left.y);
-    expect(left.x + left.width).toBeLessThanOrEqual(right.x);
-    expect(Math.abs(left.y + left.height / 2 - right.y - right.height / 2)).toBeLessThan(1);
+    expect(nextBox.x + nextBox.width).toBeLessThanOrEqual(endBox.x);
+    expect(nextBox.y).toBe(endBox.y);
+    expect(endBox.x + endBox.width).toBeLessThanOrEqual(likeBox.x);
+    expect(Math.abs(endBox.y + endBox.height / 2 - likeBox.y - likeBox.height / 2)).toBeLessThan(1);
   }
   await expect(page.locator('[data-test-id="ALBUM_CARD"]').locator(queueButtons)).toHaveCount(0);
   await expect(page.locator('section').locator(queueButtons)).toHaveCount(6);
@@ -118,7 +118,15 @@ test('queues the chosen track after the current track without playback, Like, or
     'previously-next',
   ]);
   expect(await page.evaluate(() => window.queueCalls)).toEqual([
-    { entitiesData: [{ type: 'unloaded', meta: { id: '22:202' } }] },
+    {
+      entitiesData: [{ type: 'unloaded', meta: { id: '22:202' } }],
+      sourceContextData: {
+        type: 'album',
+        from: '',
+        meta: { id: '202' },
+        sourceContextType: 'BASED_ON_ENTITY_BY_DEFAULT',
+      },
+    },
   ]);
   expect(await page.evaluate(() => [window.playCalls, window.rowEvents])).toEqual([0, []]);
   await expect(page.getByRole('status')).toHaveText('Next in queue: Album track');
@@ -159,13 +167,80 @@ test('adds tracks to the end in click order without changing playback or earlier
     '33:303',
   ]);
   expect(await page.evaluate(() => window.appendCalls)).toEqual([
-    { entitiesData: [{ type: 'unloaded', meta: { id: '22:202' } }] },
-    { entitiesData: [{ type: 'unloaded', meta: { id: '33:303' } }] },
+    {
+      entitiesData: [{ type: 'unloaded', meta: { id: '22:202' } }],
+      sourceContextData: {
+        type: 'album',
+        from: '',
+        meta: { id: '202' },
+        sourceContextType: 'BASED_ON_ENTITY_BY_DEFAULT',
+      },
+    },
+    {
+      entitiesData: [{ type: 'unloaded', meta: { id: '33:303' } }],
+      sourceContextData: {
+        type: 'album',
+        from: '',
+        meta: { id: '303' },
+        sourceContextType: 'BASED_ON_ENTITY_BY_DEFAULT',
+      },
+    },
   ]);
   expect(
     await page.evaluate(() => [window.playCalls, window.rowEvents, window.queueCalls]),
   ).toEqual([0, [], []]);
   await expect(page.getByRole('status')).toHaveText('Added to end of queue: Liked track');
+});
+
+test('My Vibe keeps manual additions ahead of recommendations, in queue order', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.fixture.startVibe());
+  await page.locator(last).nth(0).click();
+  await page.locator(last).nth(1).click();
+  await page.locator(next).nth(2).click();
+  expect(await page.evaluate(() => window.queue)).toEqual([
+    'currently-playing',
+    '33:303',
+    '11:101',
+    '22:202',
+    'recommendation-1',
+    'recommendation-2',
+  ]);
+  expect(await page.evaluate(() => window.playCalls)).toBe(0);
+  expect(await page.evaluate(() => window.appendCalls[0].sourceContextData)).toEqual({
+    type: 'album',
+    from: '',
+    meta: { id: '101' },
+    sourceContextType: 'SEARCH',
+  });
+});
+
+test('tracks without an album use the native various source context in My Vibe', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    window.fixture.startVibe();
+    window.fixture.render([{ id: '77', title: 'Track without an album' }]);
+  });
+  await page.locator(last).click();
+  expect(await page.evaluate(() => window.appendCalls)).toEqual([
+    {
+      entitiesData: [{ type: 'unloaded', meta: { id: '77' } }],
+      sourceContextData: {
+        type: 'various',
+        from: '',
+        meta: { id: '77' },
+        sourceContextType: 'BASED_ON_ENTITY_BY_DEFAULT',
+      },
+    },
+  ]);
+  expect(await page.evaluate(() => window.queue)).toEqual([
+    'currently-playing',
+    '77',
+    'recommendation-1',
+    'recommendation-2',
+  ]);
 });
 
 test('end-of-queue buttons work with Enter and Space alongside Play next', async ({ page }) => {
@@ -397,16 +472,16 @@ test('keeps both queue buttons and Like in one line at a narrow desktop window w
 }) => {
   await page.setViewportSize({ width: 480, height: 750 });
   const row = page.locator('[data-slot="0"]');
-  const [endBox, buttonBox, likeBox, rowBox] = await Promise.all([
-    row.locator(last).boundingBox(),
+  const [nextBox, endBox, likeBox, rowBox] = await Promise.all([
     row.locator(next).boundingBox(),
+    row.locator(last).boundingBox(),
     row.locator(like).boundingBox(),
     row.boundingBox(),
   ]);
-  expect(endBox.x).toBeGreaterThanOrEqual(rowBox.x);
-  expect(endBox.x + endBox.width).toBeLessThanOrEqual(buttonBox.x);
-  expect(endBox.y).toBe(buttonBox.y);
-  expect(buttonBox.x + buttonBox.width).toBeLessThanOrEqual(likeBox.x);
-  expect(buttonBox.y).toBe(likeBox.y);
+  expect(nextBox.x).toBeGreaterThanOrEqual(rowBox.x);
+  expect(nextBox.x + nextBox.width).toBeLessThanOrEqual(endBox.x);
+  expect(nextBox.y).toBe(endBox.y);
+  expect(endBox.x + endBox.width).toBeLessThanOrEqual(likeBox.x);
+  expect(endBox.y).toBe(likeBox.y);
   await page.screenshot({ path: 'test-results/queue-buttons-narrow.png' });
 });

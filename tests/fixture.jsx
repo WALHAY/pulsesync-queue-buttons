@@ -8,15 +8,36 @@ window.queueCalls = [];
 window.appendCalls = [];
 window.queue = ['currently-playing', 'previously-next'];
 window.playCalls = 0;
+let queueSources = [null, null];
+let isVibeQueue = false;
+
+function inject(payload, position) {
+  // My Vibe distinguishes manual additions by sourceContextData. Its native
+  // beforeInject hook places them before recommendations (Yandex Music 5.124.1).
+  if (isVibeQueue && payload.sourceContextData) {
+    const manualCount = queueSources.slice(1).filter(Boolean).length;
+    position = Math.min(position, 1 + manualCount);
+  }
+  const ids = payload.entitiesData.map(entity => entity.meta.id);
+  window.queue.splice(position, 0, ...ids);
+  queueSources.splice(position, 0, ...ids.map(() => payload.sourceContextData));
+}
+
+function startVibe() {
+  isVibeQueue = true;
+  window.queue = ['currently-playing', 'recommendation-1', 'recommendation-2'];
+  queueSources = [null, null, null];
+}
+
 window.pulsesyncApi = {
   playerInstance: {
     injectNext(payload) {
       window.queueCalls.push(payload);
-      window.queue.splice(1, 0, ...payload.entitiesData.map(entity => entity.meta.id));
+      inject(payload, 1);
     },
     injectLast(payload) {
       window.appendCalls.push(payload);
-      window.queue.push(...payload.entitiesData.map(entity => entity.meta.id));
+      inject(payload, window.queue.length);
     },
     playContext() {
       window.playCalls++;
@@ -93,7 +114,7 @@ function render(next = tracks) {
   );
 }
 
-window.fixture = { render };
+window.fixture = { render, startVibe };
 render([
   { id: '11', albumId: '101', entityId: '11:101', title: 'Search track', surface: 'search' },
   { id: '22', albumId: '202', entityId: '22:202', title: 'Album track', surface: 'album' },

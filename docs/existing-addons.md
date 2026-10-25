@@ -35,4 +35,17 @@ Inspected the installed PulseSync 2.16.0-beta importer and the modified Yandex M
 - PulseSync imports ZIP archives with a `.pext` extension and `metadata.json` at the root. Script and CSS filenames come from the metadata.
 - Search and common track rows expose the native `LIKE_BUTTON` control. PlayNextInline inserts its button immediately before that control.
 - Yandex Music's native track menu calls `playerInstance.injectNext` with an unloaded entity whose ID includes the album context. PlayNextInline uses that operation rather than starting playback.
-- The 14 Playwright tests passed with real React fixtures and a simulated queue. Packaging verifies decompressed files against the source files. Authenticated desktop playback and third-party themes have not been tested.
+- The original 14 Playwright tests passed with real React fixtures and a simulated queue. Packaging verifies decompressed files against the source files. Authenticated desktop playback and third-party themes were not tested.
+
+### Queue fix for Yandex Music 5.124.1
+
+The installed client was checked again for QueueButtons 1.1.2. Its track menu calls `injectNext` and `injectLast` with both `entitiesData` and `sourceContextData`. In My Vibe, the `beforeInject` hook uses the source context to identify manual additions and place them before recommendations. Omitting it leaves Add to end behind the recommendation batch.
+
+QueueButtons now passes the native menu's fallback source context: the track's album, or `various` for tracks without an album. The source comes from the clicked track, independently of the current playback context. Search rows carry the native `SEARCH` source type.
+
+Evidence in the installed application archive:
+
+- `app/_next/static/chunks/1808-fb251e56e9d1f799.js`: menu action (module 17627) and source-context builder (module 70825).
+- `app/_next/static/chunks/app/(product)/layout-bd9f7baf96808a06.js`: My Vibe's `beforeInject` hook.
+
+The actual installed hook was executed in isolation: with one manual entry and two recommendations, a context-free append stayed at position 4; album and `various` source contexts both moved it to position 2, directly after the manual entry. The browser regression test reproduces this distinction and fails against version 1.1.1. All 24 browser tests pass with the fix. This verifies queue placement logic, not live desktop playback.

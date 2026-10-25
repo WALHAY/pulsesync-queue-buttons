@@ -5,11 +5,11 @@ Add songs to your Yandex Music queue straight from the track list. QueueButtons 
 - **Play next / Играть следующим** — puts the song right after the current one.
 - **Add to end of queue / Добавить в конец очереди** — puts it after everything already queued.
 
-You'll find both to the left of the heart, with Play next closest to it. They use the client's own icons and colors. Your current song keeps playing when you click them.
+You'll find both to the left of the heart, with Add to end closest to it. They use the client's own icons and colors. Your current song keeps playing when you click them.
 
 ## Install
 
-Open PulseSync, drag in `QueueButtons-1.1.1.pext`, then enable **QueueButtons** in the addons library. Yandex Music may reload.
+Open PulseSync, drag in `QueueButtons-1.1.2.pext`, then enable **QueueButtons** in the addons library. Yandex Music may reload.
 
 If dragging does nothing on macOS, open Terminal and type `open -a PulseSync ` with a space at the end. Drag the `.pext` file into Terminal to add its path, then press Enter.
 
@@ -20,6 +20,8 @@ This is an update to **PlayNextInline**. Import it over the old version; there i
 Keep PulseSync running alongside the modified Yandex Music client. Hover over a button for its label, or use Tab and Enter/Space to activate it.
 
 Songs added to the end stay in the order you picked them. With Play next, the last song you picked goes next. Unavailable tracks have disabled buttons.
+
+In My Vibe, Add to end puts songs after your manual additions and before the next recommendations, just like the track menu.
 
 The addon uses the same queue actions as Yandex Music's track menu. If it can't add a song, it shows a message so you can try the menu instead. Client updates can affect compatibility.
 
