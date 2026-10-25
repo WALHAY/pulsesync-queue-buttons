@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Inline Play next and Add to end of queue buttons for PulseSync",
+  "license": "MIT",
   "scripts": {
     "check": "biome check . --error-on-warnings",
     "lint": "biome lint . --error-on-warnings",

@@ -36,3 +36,5 @@ Unavailable tracks have disabled buttons. If a song doesn't get added, try the u
 For a manual install, import the `.pext` file into PulseSync and enable the addon. See the [installation instructions](https://github.com/WALHAY/pulsesync-queue-buttons#install) if you need help building or importing it.
 
 If you used **PlayNextInline**, importing QueueButtons updates your existing installation.
+
+[Changelog](https://github.com/WALHAY/pulsesync-queue-buttons/blob/main/CHANGELOG.md) · [MIT license](https://github.com/WALHAY/pulsesync-queue-buttons/blob/main/LICENSE)

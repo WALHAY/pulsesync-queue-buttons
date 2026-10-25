@@ -3,7 +3,7 @@ import { unzipSync, zipSync } from 'fflate';
 
 const root = new URL('../', import.meta.url);
 const metadata = JSON.parse(await readFile(new URL('addon/metadata.json', root), 'utf8'));
-const names = [
+const addonFiles = [
   'metadata.json',
   metadata.script,
   metadata.css,
@@ -12,10 +12,15 @@ const names = [
   'images/track-buttons.png',
   'images/queue-actions.svg',
 ];
+const files = [
+  ...addonFiles.map(name => [name, `addon/${name}`]),
+  ['LICENSE', 'LICENSE'],
+  ['CHANGELOG.md', 'CHANGELOG.md'],
+];
 const entries = {};
-for (const name of names) {
+for (const [name, source] of files) {
   entries[name] = [
-    new Uint8Array(await readFile(new URL(`addon/${name}`, root))),
+    new Uint8Array(await readFile(new URL(source, root))),
     {
       mtime: new Date('2026-01-01T00:00:00Z'),
     },
@@ -23,7 +28,7 @@ for (const name of names) {
 }
 const archive = zipSync(entries, { level: 9 });
 const unpacked = unzipSync(archive);
-for (const name of names) {
+for (const name of Object.keys(entries)) {
   if (!Buffer.from(unpacked[name]).equals(Buffer.from(entries[name][0]))) {
     throw new Error(`Archive verification failed: ${name}`);
   }

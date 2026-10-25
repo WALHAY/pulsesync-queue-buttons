@@ -62,4 +62,6 @@ npm test
 
 Packages in `dist/`, installed dependencies, and test reports are ignored by Git. Browser tests use a simulated queue; check playback in the desktop client before publishing.
 
-[Publishing guide](docs/publishing.md) · [Release notes](docs/release-notes-1.1.4.md) · [Original addon search](docs/existing-addons.md)
+[Changelog](CHANGELOG.md) · [MIT license](LICENSE)
+
+The MIT license covers QueueButtons' code and original assets. Yandex Music's icons remain the property of their owners.
