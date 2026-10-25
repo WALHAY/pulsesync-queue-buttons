@@ -2,7 +2,13 @@
 
 Queue songs as you browse, without opening the track menu every time.
 
+[GitHub — source code](https://github.com/WALHAY/pulsesync-queue-buttons) · [Downloads](https://github.com/WALHAY/pulsesync-queue-buttons/releases) · [Report an issue](https://github.com/WALHAY/pulsesync-queue-buttons/issues)
+
 QueueButtons adds two small buttons beside the heart in Yandex Music's search results, albums, and Liked tracks. They use the client's own icons and colors, and your current song keeps playing when you click them.
+
+![Play next and Add to end grouped just to the left of Like in search results, an album, and Liked tracks.](images/track-buttons.png)
+
+_Layout illustration with sample tracks._
 
 ## Choose what plays next
 
@@ -12,6 +18,10 @@ QueueButtons adds two small buttons beside the heart in Yandex Music's search re
 From left to right, the buttons are **Play next → Add to end → Like**.
 
 Use **Add to end** when you're picking several songs and want to keep them in that order. With **Play next**, your most recent pick goes first.
+
+![With A playing and B and D queued, Play next inserts your chosen track C before B; Add to end places C after D.](images/queue-actions.svg)
+
+_Queue order illustration. This explains the actions; it is not a screenshot of the queue panel._
 
 In **My Vibe**, Add to end places songs after your manual queue and before the next recommendations. It follows Yandex Music's built-in queue behavior.
 

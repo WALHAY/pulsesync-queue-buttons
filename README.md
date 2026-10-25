@@ -4,7 +4,7 @@ Pick what plays next, right from the track list.
 
 QueueButtons adds **Play next** and **Add to end** beside the Like button in Yandex Music. It works in search results, albums, and Liked tracks through [PulseSync](https://pulsesync.dev).
 
-![QueueButtons preview](docs/queue-buttons-preview.png)
+![QueueButtons preview](addon/images/track-buttons.png)
 
 _Layout illustration with sample tracks._
 
@@ -28,14 +28,14 @@ npm ci
 npm run build
 ```
 
-1. Open PulseSync and drag in `dist/QueueButtons-1.1.3.pext`.
+1. Open PulseSync and drag in `dist/QueueButtons-1.1.4.pext`.
 2. Enable **QueueButtons** in your addons library. Yandex Music may reload.
 3. Open search results, an album, or Liked tracks and look beside the heart.
 
 If dragging does nothing on macOS, run this from the project folder:
 
 ```sh
-open -a PulseSync dist/QueueButtons-1.1.3.pext
+open -a PulseSync dist/QueueButtons-1.1.4.pext
 ```
 
 If you previously installed **PlayNextInline**, import QueueButtons over it. It's the same addon under a new name.
@@ -62,4 +62,4 @@ npm test
 
 Packages in `dist/`, installed dependencies, and test reports are ignored by Git. Browser tests use a simulated queue; check playback in the desktop client before publishing.
 
-[Publishing guide](docs/publishing.md) · [Release notes](docs/release-notes-1.1.3.md) · [Original addon search](docs/existing-addons.md)
+[Publishing guide](docs/publishing.md) · [Release notes](docs/release-notes-1.1.4.md) · [Original addon search](docs/existing-addons.md)
