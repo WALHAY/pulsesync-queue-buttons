@@ -16,7 +16,7 @@ Then use `https://github.com/WALHAY/pulsesync-play-next` in the publication form
 ## Submit in PulseSync
 
 1. Sign in to PulseSync. No saved session was available during preparation.
-2. Import the `.pext` file and open **PlayNextInline** in the addons library.
+2. Import the `.pext` file and open **PlayNextInline** in the addons library. If drag-and-drop does nothing on macOS, run `open -a PulseSync dist/PlayNextInline-1.0.1.pext` from the project directory.
 3. Check that the addon author, currently `walhay`, matches your PulseSync username or nickname. The client compares these case-insensitively before showing publication controls. If you change the author in this repository, rebuild with `npm run build` and reimport.
 4. Open **Publication / Публикация**, supply the GitHub link, and paste the changelog from [release notes](release-notes-1.0.1.md).
 5. Set **AI was used during development / При разработке использовался ИИ** to **Yes**.

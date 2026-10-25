@@ -8,6 +8,14 @@ Uses Yandex Music's native Play next icon and track-control colors, hover, and f
 
 Import [`dist/PlayNextInline-1.0.1.pext`](dist/PlayNextInline-1.0.1.pext) into PulseSync by dragging it onto the PulseSync window, then enable **PlayNextInline**. Enabling script addons may reload Yandex Music. See [addon instructions](addon/README.md) for usage and compatibility.
 
+If dragging does nothing on macOS, run this from the project directory:
+
+```sh
+open -a PulseSync dist/PlayNextInline-1.0.1.pext
+```
+
+This uses PulseSync's native file-opening handler. It successfully imported version 1.0.1 into the installed PulseSync 2.16.0-beta when dropping the file did nothing. Open the addons library and enable **PlayNextInline** after importing.
+
 ## Existing addon check
 
 No exact match was found in the installed addons or public PulseSync addon repositories inspected on October 25, 2026. Yandex Music already offers **Play next** in the track context menu; this addon exposes that operation beside Like. The official addon catalog returned `FORBIDDEN`, including through the existing session, so store-only addons could not be ruled out. See [sources and search coverage](docs/existing-addons.md).

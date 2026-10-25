@@ -14,6 +14,8 @@ The button stays visible and uses Yandex Music's built-in **Play next** icon, a 
 2. Drag `PlayNextInline-1.0.1.pext` into its window and import it.
 3. Enable **PlayNextInline** in your addons library. PulseSync may reload Yandex Music when enabling a script addon.
 
+If dropping the file does nothing on macOS, open Terminal, type `open -a PulseSync ` (including the trailing space), drag the `.pext` file into Terminal to insert its path, and press Enter. This uses PulseSync's native file-opening handler. Then open the addons library and enable **PlayNextInline**.
+
 Keep PulseSync running alongside the modified Yandex Music client. To remove the addon, disable or delete it in PulseSync.
 
 ## Compatibility
