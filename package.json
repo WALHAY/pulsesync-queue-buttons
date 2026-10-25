@@ -1,0 +1,19 @@
+{
+  "name": "pulsesync-play-next",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Inline Play next button for PulseSync track rows",
+  "scripts": {
+    "check": "node --check addon/script.js",
+    "test": "playwright test",
+    "build": "node scripts/package.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "esbuild": "^0.28.2",
+    "fflate": "^0.8.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  }
+}

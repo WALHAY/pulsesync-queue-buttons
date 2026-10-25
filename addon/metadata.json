@@ -1,0 +1,16 @@
+{
+  "id": "7336d3ee-34a4-45e7-96fd-28b34445eeb1",
+  "name": "PlayNextInline",
+  "author": "walhay",
+  "description": "Кнопка «Играть следующим» слева от лайка в строках треков: поиск, альбомы и любимые треки.",
+  "version": "1.0.0",
+  "type": "script",
+  "script": "script.js",
+  "css": "style.css",
+  "image": "icon.svg",
+  "tags": ["script", "queue", "player"],
+  "dependencies": [],
+  "conflictsWith": [],
+  "allowedUrls": [],
+  "supportedVersions": []
+}

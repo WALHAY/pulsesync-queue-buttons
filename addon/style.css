@@ -1,0 +1,66 @@
+.ps-play-next-button {
+  display: inline-flex;
+  flex: 0 0 2.5rem;
+  align-items: center;
+  align-self: center;
+  justify-content: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: var(--ym-radius-size-round, 50%);
+  background: transparent;
+  color: var(--ym-controls-color-primary-text-enabled, #a6a6a6);
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.ps-play-next-button:hover:not(:disabled),
+.ps-play-next-button:focus-visible {
+  background: var(--ym-controls-color-secondary-default-hovered, #8882);
+  color: var(--ym-controls-color-primary-text-enabled_variant, #fff);
+}
+
+.ps-play-next-button:focus-visible {
+  outline: 2px solid var(--ym-controls-color-primary-default-enabled, #ffdb4d);
+  outline-offset: -2px;
+}
+
+.ps-play-next-button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.ps-play-next-button[aria-busy="true"] {
+  opacity: 0.6;
+}
+
+.ps-play-next-button svg {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  pointer-events: none;
+}
+
+.ps-play-next-status {
+  position: fixed;
+  inset-inline-start: 50%;
+  bottom: 6.5rem;
+  transform: translateX(-50%);
+  z-index: 10000;
+  max-inline-size: min(32rem, calc(100vw - 3rem));
+  padding: 0.75rem 1rem;
+  border: 1px solid #8885;
+  border-radius: 0.75rem;
+  background: var(--ym-background-color-primary-enabled-content, #242426);
+  color: var(--ym-controls-color-primary-text-enabled_variant, #fff);
+  box-shadow: 0 4px 20px #0003;
+  font: inherit;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+
+.ps-play-next-status:empty {
+  visibility: hidden;
+}
