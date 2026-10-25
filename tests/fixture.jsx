@@ -6,6 +6,7 @@ const root = createRoot(document.getElementById('root'));
 let tracks = [];
 window.rowEvents = [];
 window.queueCalls = [];
+window.appendCalls = [];
 window.queue = ['currently-playing', 'previously-next'];
 window.playCalls = 0;
 window.pulsesyncApi = {
@@ -13,6 +14,10 @@ window.pulsesyncApi = {
     injectNext(payload) {
       window.queueCalls.push(payload);
       window.queue.splice(1, 0, ...payload.entitiesData.map(entity => entity.meta.id));
+    },
+    injectLast(payload) {
+      window.appendCalls.push(payload);
+      window.queue.push(...payload.entitiesData.map(entity => entity.meta.id));
     },
     playContext() { window.playCalls++; },
   },

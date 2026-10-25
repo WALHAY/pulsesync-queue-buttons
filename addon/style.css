@@ -1,4 +1,4 @@
-.ps-play-next-button {
+.ps-queue-button {
   display: inline-flex;
   flex: 0 0 2.5rem;
   align-items: center;
@@ -17,38 +17,38 @@
   transition: opacity var(--ym-duration-transition, 0.15s), color var(--ym-duration-transition, 0.15s);
 }
 
-.ps-play-next-button:hover:not(:disabled),
-.ps-play-next-button:focus-visible {
+.ps-queue-button:hover:not(:disabled),
+.ps-queue-button:focus-visible {
   color: var(--text-hovered-color, var(--ym-controls-color-primary-text-enabled_variant, #fff));
 }
 
-.ps-play-next-button:focus-visible {
+.ps-queue-button:focus-visible {
   outline: none;
   box-shadow: 0 0 0 var(--ym-spacer-size-xxxs, 2px) var(--ym-controls-color-secondary-default-focused_stroke, #ffdb4d);
 }
 
-.ps-play-next-button:disabled {
+.ps-queue-button:disabled {
   color: var(--ym-controls-color-primary-text-disabled, #535353);
   cursor: default;
 }
 
-.ps-play-next-button[aria-busy="true"] {
+.ps-queue-button[aria-busy="true"] {
   opacity: 0.6;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ps-play-next-button {
+  .ps-queue-button {
     transition: none;
   }
 }
 
-.ps-play-next-button svg {
+.ps-queue-button svg {
   inline-size: 1.25rem;
   block-size: 1.25rem;
   pointer-events: none;
 }
 
-.ps-play-next-status {
+.ps-queue-status {
   position: fixed;
   inset-inline-start: 50%;
   bottom: 6.5rem;
@@ -67,6 +67,6 @@
   pointer-events: none;
 }
 
-.ps-play-next-status:empty {
+.ps-queue-status:empty {
   visibility: hidden;
 }

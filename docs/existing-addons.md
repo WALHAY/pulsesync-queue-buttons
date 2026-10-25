@@ -1,5 +1,7 @@
 # Existing addon check
 
+These notes cover the original PlayNextInline release. The addon is now called **QueueButtons** and also includes Add to end of queue.
+
 Checked October 25, 2026 for a button that inserts a selected track immediately after the current track, immediately to the left of Like on the same row in search, albums, and liked tracks.
 
 **Result:** no exact match found in the accessible sources below. Complete the local PlayNextInline addon using the client's existing native queue operation. This finding does not exclude store-only or Discord-distributed addons.

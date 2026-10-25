@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { build } from 'esbuild';
 import { fileURLToPath } from 'node:url';
+import { readFile } from 'node:fs/promises';
+import { unzipSync, strFromU8 } from 'fflate';
 
 const addon = fileURLToPath(new URL('../addon/script.js', import.meta.url));
 const css = fileURLToPath(new URL('../addon/style.css', import.meta.url));
@@ -12,6 +14,8 @@ const fixture = await build({
   define: { 'process.env.NODE_ENV': '"development"' },
 });
 const next = '[data-test-id="PULSESYNC_PLAY_NEXT_BUTTON"]';
+const last = '[data-test-id="PULSESYNC_ADD_TO_QUEUE_BUTTON"]';
+const queueButtons = `${last}, ${next}`;
 const like = '[data-test-id="LIKE_BUTTON"]';
 
 test.beforeEach(async ({ page }) => {
@@ -19,7 +23,9 @@ test.beforeEach(async ({ page }) => {
   // redistributing the client's artwork or depending on a real music account.
   await page.route('https://music.yandex.ru/icons/sprite.svg', route => route.fulfill({
     contentType: 'image/svg+xml',
-    body: '<svg xmlns="http://www.w3.org/2000/svg"><symbol id="playNext_xxs" viewBox="0 0 20 20"><path fill="currentColor" d="M3 10h14v2H3zM3 15h14v2H3z"/></symbol></svg>',
+    body: '<svg xmlns="http://www.w3.org/2000/svg">' +
+      '<symbol id="playNext_xxs" viewBox="0 0 20 20"><path fill="currentColor" d="M3 10h14v2H3zM3 15h14v2H3z"/></symbol>' +
+      '<symbol id="playLast_xxs" viewBox="0 0 20 20"><path fill="currentColor" d="M3 3h14v2H3zM3 8h14v2H3z"/></symbol></svg>',
   }));
   await page.route('https://music.yandex.ru/', route => route.fulfill({
     contentType: 'text/html',
@@ -40,26 +46,33 @@ test.beforeEach(async ({ page }) => {
   await page.addScriptTag({ path: addon });
 });
 
-test('places one visible button immediately left of Like on all three surfaces', async ({ page }) => {
+test('places both buttons left of Like, keeping Play next closest, on all three surfaces', async ({ page }) => {
   await expect(page.locator(next)).toHaveCount(3);
+  await expect(page.locator(last)).toHaveCount(3);
   for (let i = 0; i < 3; i++) {
     const row = page.locator(`[data-slot="${i}"]`);
     const button = row.locator(next);
     await expect(button).toBeVisible();
     await expect(button).toHaveAccessibleName('Play next');
+    await expect(row.locator(last)).toBeVisible();
+    await expect(row.locator(last)).toHaveAccessibleName('Add to end of queue');
+    expect(await row.locator(last).evaluate(node => node.nextElementSibling?.dataset.testId)).toBe('PULSESYNC_PLAY_NEXT_BUTTON');
     expect(await button.evaluate(node => node.nextElementSibling?.dataset.testId)).toBe('LIKE_BUTTON');
-    const [left, right] = await Promise.all([button.boundingBox(), row.locator(like).boundingBox()]);
+    const [end, left, right] = await Promise.all([row.locator(last).boundingBox(), button.boundingBox(), row.locator(like).boundingBox()]);
+    expect(end.x + end.width).toBeLessThanOrEqual(left.x);
+    expect(end.y).toBe(left.y);
     expect(left.x + left.width).toBeLessThanOrEqual(right.x);
     expect(Math.abs(left.y + left.height / 2 - right.y - right.height / 2)).toBeLessThan(1);
   }
-  await expect(page.locator('[data-test-id="ALBUM_CARD"]').locator(next)).toHaveCount(0);
-  await expect(page.locator('section').locator(next)).toHaveCount(3);
+  await expect(page.locator('[data-test-id="ALBUM_CARD"]').locator(queueButtons)).toHaveCount(0);
+  await expect(page.locator('section').locator(queueButtons)).toHaveCount(6);
 });
 
 test('renders the client sprite and follows track-control colors and focus styling', async ({ page }) => {
   const button = page.locator(next).first();
   const icon = button.locator('svg');
   await expect.poll(() => icon.locator('use').evaluate(node => node.getBBox().width)).toBeGreaterThan(0);
+  await expect.poll(() => page.locator(last).first().locator('use').evaluate(node => node.getBBox().width)).toBeGreaterThan(0);
   await expect(icon).toHaveCSS('width', '20px');
   await expect(button).toHaveCSS('width', '40px');
   await expect(button).toHaveCSS('color', 'rgb(166, 166, 166)');
@@ -94,9 +107,33 @@ test('Enter and Space activate the button without triggering the row', async ({ 
   expect(await page.evaluate(() => window.rowEvents)).toEqual([]);
 });
 
-test('a double-click inserts only once', async ({ page }) => {
-  await page.locator(next).first().dblclick();
-  expect(await page.evaluate(() => window.queueCalls.length)).toBe(1);
+for (const selector of [next, last]) {
+  test(`a double-click inserts only once for ${selector}`, async ({ page }) => {
+    await page.locator(selector).first().dblclick();
+    expect(await page.evaluate(() => window.queueCalls.length + window.appendCalls.length)).toBe(1);
+    expect(await page.evaluate(() => window.rowEvents)).toEqual([]);
+  });
+}
+
+test('adds tracks to the end in click order without changing playback or earlier queue entries', async ({ page }) => {
+  await page.locator(last).nth(1).click();
+  await page.locator(last).nth(2).click();
+  expect(await page.evaluate(() => window.queue)).toEqual(['currently-playing', 'previously-next', '22:202', '33:303']);
+  expect(await page.evaluate(() => window.appendCalls)).toEqual([
+    { entitiesData: [{ type: 'unloaded', meta: { id: '22:202' } }] },
+    { entitiesData: [{ type: 'unloaded', meta: { id: '33:303' } }] },
+  ]);
+  expect(await page.evaluate(() => [window.playCalls, window.rowEvents, window.queueCalls])).toEqual([0, [], []]);
+  await expect(page.getByRole('status')).toHaveText('Added to end of queue: Liked track');
+});
+
+test('end-of-queue buttons work with Enter and Space alongside Play next', async ({ page }) => {
+  await page.locator(last).nth(0).focus();
+  await page.keyboard.press('Enter');
+  await page.locator(last).nth(1).focus();
+  await page.keyboard.press('Space');
+  await page.locator(next).nth(2).click();
+  expect(await page.evaluate(() => window.queue)).toEqual(['currently-playing', '33:303', 'previously-next', '11:101', '22:202']);
   expect(await page.evaluate(() => window.rowEvents)).toEqual([]);
 });
 
@@ -110,6 +147,8 @@ test('a recycled React row queues its new track, including the album context', a
   expect(await button.evaluate(node => node === window.originalButton)).toBe(true);
   await button.click();
   expect(await page.evaluate(() => window.queue[1])).toBe('99:909');
+  await page.locator(last).click();
+  expect(await page.evaluate(() => window.queue.at(-1))).toBe('99:909');
 });
 
 test('handles appended rows, replaced Like buttons, and removed Like buttons', async ({ page }) => {
@@ -117,12 +156,13 @@ test('handles appended rows, replaced Like buttons, and removed Like buttons', a
     id: String(i + 1), albumId: '800', title: `Track ${i}`, generation: 1,
   }))));
   await expect(page.locator(next)).toHaveCount(30);
+  await expect(page.locator(last)).toHaveCount(30);
   await page.locator(next).last().click();
   expect(await page.evaluate(() => window.queue[1])).toBe('30:800');
   await page.evaluate(() => window.fixture.render([
     { id: '1', albumId: '800', title: 'Track 0', noLike: true },
   ]));
-  await expect(page.locator(next)).toHaveCount(0);
+  await expect(page.locator(queueButtons)).toHaveCount(0);
 });
 
 test('unavailable tracks and signed-out controls remain disabled', async ({ page }) => {
@@ -132,10 +172,15 @@ test('unavailable tracks and signed-out controls remain disabled', async ({ page
   ]));
   await expect(page.locator(next).nth(0)).toBeDisabled();
   await expect(page.locator(next).nth(1)).toBeDisabled();
+  await expect(page.locator(last).nth(0)).toBeDisabled();
+  await expect(page.locator(last).nth(1)).toBeDisabled();
   await page.locator(next).nth(0).dispatchEvent('click');
+  await page.locator(last).nth(0).dispatchEvent('click');
   expect(await page.evaluate(() => window.queueCalls)).toEqual([]);
+  expect(await page.evaluate(() => window.appendCalls)).toEqual([]);
   await page.evaluate(() => window.fixture.render([{ id: '1', title: 'Available again' }]));
   await expect(page.locator(next)).toBeEnabled();
+  await expect(page.locator(last)).toBeEnabled();
 });
 
 test('uses the row track link when React props are unavailable', async ({ page }) => {
@@ -146,6 +191,8 @@ test('uses the row track link when React props are unavailable', async ({ page }
   });
   await page.locator('[data-slot="1"]').locator(next).click();
   expect(await page.evaluate(() => window.queue[1])).toBe('22:202');
+  await page.locator('[data-slot="1"]').locator(last).click();
+  expect(await page.evaluate(() => window.queue.at(-1))).toBe('22:202');
 });
 
 test('does not guess the track when both props and track links are absent', async ({ page }) => {
@@ -158,6 +205,8 @@ test('does not guess the track when both props and track links are absent', asyn
   await page.locator('[data-slot="1"]').locator(next).click();
   expect(await page.evaluate(() => window.queueCalls)).toEqual([]);
   await expect(page.getByRole('status')).toContainText('Could not add this track');
+  await page.locator('[data-slot="1"]').locator(last).click();
+  expect(await page.evaluate(() => window.appendCalls)).toEqual([]);
 });
 
 test('missing queue API reports failure and works when the player becomes ready', async ({ page }) => {
@@ -172,26 +221,49 @@ test('missing queue API reports failure and works when the player becomes ready'
   await expect(page.getByRole('status')).toContainText('Next in queue');
 });
 
-test('queue rejection does not report success or leave the button busy', async ({ page }) => {
-  await page.evaluate(() => {
-    window.pulsesyncApi.playerInstance.injectNext = () => Promise.reject(new Error('queue failed'));
+for (const [selector, method] of [[next, 'injectNext'], [last, 'injectLast']]) {
+  test(`${method} rejection does not report success or leave the button busy`, async ({ page }) => {
+    await page.evaluate(method => {
+      window.pulsesyncApi.playerInstance[method] = () => Promise.reject(new Error('queue failed'));
+    }, method);
+    const button = page.locator(selector).first();
+    await button.click();
+    await expect(page.getByRole('status')).toContainText('Could not add this track');
+    await expect(button).not.toHaveAttribute('aria-busy', 'true');
   });
-  const button = page.locator(next).first();
-  await button.click();
+}
+
+test('a missing append API cannot insert at the wrong position, and Play next still works', async ({ page }) => {
+  await page.evaluate(() => { delete window.pulsesyncApi.playerInstance.injectLast; });
+  await page.locator(last).first().click();
   await expect(page.getByRole('status')).toContainText('Could not add this track');
-  await expect(button).not.toHaveAttribute('aria-busy', 'true');
+  expect(await page.evaluate(() => window.queue)).toEqual(['currently-playing', 'previously-next']);
+  await page.locator(next).first().click();
+  expect(await page.evaluate(() => window.queue[1])).toBe('11:101');
+});
+
+test('upgrades the previous PlayNextInline script without leaving duplicate controls', async ({ page }) => {
+  const archive = unzipSync(await readFile(new URL('../dist/PlayNextInline-1.0.1.pext', import.meta.url)));
+  await page.evaluate(() => window.__pulseSyncQueueButtons.dispose());
+  await page.addScriptTag({ content: strFromU8(archive['script.js']) });
+  await expect(page.locator(next)).toHaveCount(3);
+  await page.addScriptTag({ path: addon });
+  await expect(page.locator(queueButtons)).toHaveCount(6);
+  expect(await page.evaluate(() => window.__pulseSyncPlayNextInline)).toBeUndefined();
+  await page.locator(next).first().click();
+  expect(await page.evaluate(() => window.queueCalls.length)).toBe(1);
 });
 
 test('reloading and disabling the addon remove old buttons, observers, and notifications', async ({ page }) => {
   await page.addScriptTag({ path: addon });
-  await expect(page.locator(next)).toHaveCount(3);
+  await expect(page.locator(queueButtons)).toHaveCount(6);
   await page.locator(next).first().click();
   expect(await page.evaluate(() => window.queueCalls.length)).toBe(1);
   await page.locator('script').last().evaluate(node => node.remove());
-  await expect(page.locator(next)).toHaveCount(0);
+  await expect(page.locator(queueButtons)).toHaveCount(0);
   await expect(page.getByRole('status')).toHaveCount(0);
   await page.evaluate(() => window.fixture.render([{ id: '77', title: 'After cleanup' }]));
-  await expect(page.locator(next)).toHaveCount(0);
+  await expect(page.locator(queueButtons)).toHaveCount(0);
 });
 
 test('localizes labels and renders track titles as text', async ({ page }) => {
@@ -200,19 +272,25 @@ test('localizes labels and renders track titles as text', async ({ page }) => {
     window.fixture.render([{ id: '7', title: '<img src=x onerror=alert(1)>' }]);
   });
   await expect(page.locator(next)).toHaveAccessibleName('Играть следующим');
+  await expect(page.locator(last)).toHaveAccessibleName('Добавить в конец очереди');
   await page.locator(next).click();
   await expect(page.getByRole('status')).toHaveText('Следующим в очереди: <img src=x onerror=alert(1)>');
   await expect(page.getByRole('status').locator('img')).toHaveCount(0);
+  await page.locator(last).click();
+  await expect(page.getByRole('status')).toHaveText('Добавлено в конец очереди: <img src=x onerror=alert(1)>');
+  await expect(page.getByRole('status').locator('img')).toHaveCount(0);
 });
 
-test('keeps both controls in one line at a narrow desktop window width', async ({ page }) => {
+test('keeps both queue buttons and Like in one line at a narrow desktop window width', async ({ page }) => {
   await page.setViewportSize({ width: 480, height: 750 });
   const row = page.locator('[data-slot="0"]');
-  const [buttonBox, likeBox, rowBox] = await Promise.all([
-    row.locator(next).boundingBox(), row.locator(like).boundingBox(), row.boundingBox(),
+  const [endBox, buttonBox, likeBox, rowBox] = await Promise.all([
+    row.locator(last).boundingBox(), row.locator(next).boundingBox(), row.locator(like).boundingBox(), row.boundingBox(),
   ]);
-  expect(buttonBox.x).toBeGreaterThanOrEqual(rowBox.x);
+  expect(endBox.x).toBeGreaterThanOrEqual(rowBox.x);
+  expect(endBox.x + endBox.width).toBeLessThanOrEqual(buttonBox.x);
+  expect(endBox.y).toBe(buttonBox.y);
   expect(buttonBox.x + buttonBox.width).toBeLessThanOrEqual(likeBox.x);
   expect(buttonBox.y).toBe(likeBox.y);
-  await page.screenshot({ path: 'test-results/play-next-narrow.png' });
+  await page.screenshot({ path: 'test-results/queue-buttons-narrow.png' });
 });

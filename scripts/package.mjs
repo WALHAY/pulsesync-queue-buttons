@@ -18,6 +18,6 @@ for (const name of names) {
   }
 }
 await mkdir(new URL('dist/', root), { recursive: true });
-const filename = `PlayNextInline-${metadata.version}.pext`;
+const filename = `${metadata.name}-${metadata.version}.pext`;
 await writeFile(new URL(`dist/${filename}`, root), archive);
 console.log(`Built and verified dist/${filename} (${archive.length} bytes)`);

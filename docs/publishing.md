@@ -1,34 +1,34 @@
-# Publishing PlayNextInline
+# Publishing QueueButtons
 
-The prepared release is [`PlayNextInline-1.0.1.pext`](../dist/PlayNextInline-1.0.1.pext). Publication is deferred at the owner's request. Nothing has been submitted to the PulseSync catalog.
+The current package is [QueueButtons-1.1.0.pext](../dist/QueueButtons-1.1.0.pext). Nothing has been submitted to the catalog yet.
 
-## Source repository
+## Put the source on GitHub
 
-Local Git commits are ready. The configured remote is `git@github.com:WALHAY/pulsesync-play-next.git`, but GitHub did not resolve that repository during preparation. Create the repository and publish the source before submitting to PulseSync:
+PulseSync asks for a GitHub link when you submit an addon. This project's remote points to `WALHAY/pulsesync-play-next`.
+
+If that repository doesn't exist yet, create it:
 
 ```sh
-gh repo create WALHAY/pulsesync-play-next --public --description "Inline Play next button for PulseSync and Yandex Music"
+gh repo create WALHAY/pulsesync-play-next --public --description "QueueButtons for PulseSync and Yandex Music"
+```
+
+Then push your commits:
+
+```sh
 git push -u origin main
 ```
 
-Then use `https://github.com/WALHAY/pulsesync-play-next` in the publication form. If the repository has already been created by then, only the push is needed.
+Use `https://github.com/WALHAY/pulsesync-play-next` as the source link.
 
-## Submit in PulseSync
+## Submit the addon
 
-1. Sign in to PulseSync. No saved session was available during preparation.
-2. Import the `.pext` file and open **PlayNextInline** in the addons library. If drag-and-drop does nothing on macOS, run `open -a PulseSync dist/PlayNextInline-1.0.1.pext` from the project directory.
-3. Check that the addon author, currently `walhay`, matches your PulseSync username or nickname. The client compares these case-insensitively before showing publication controls. If you change the author in this repository, rebuild with `npm run build` and reimport.
-4. Open **Publication / Публикация**, supply the GitHub link, and paste the changelog from [release notes](release-notes-1.0.1.md).
-5. Set **AI was used during development / При разработке использовался ИИ** to **Yes**.
-6. Read the [official publication rules](https://pulsesync.dev/wiki/main/app/addons/publishing) and accept them if you agree. The rules page returned HTTP 403 during preparation; its terms have not been reviewed or accepted here.
-7. Submit for moderation. A successful upload means **sent for review**; the addon appears publicly only after PulseSync approves it.
+1. Sign in to PulseSync and import the package. On macOS, `open -a PulseSync dist/QueueButtons-1.1.0.pext` works if dropping the file doesn't.
+2. Enable **QueueButtons** and try both buttons in search results, an album, and Liked tracks. Play next should insert after the current song; Add to end should append after the existing queue. The current song should keep playing.
+3. Open the addon's **Publication / Публикация** page. Its author, currently `walhay`, must match your PulseSync username or nickname. If you edit the author in this project's metadata, rebuild and import the new package.
+4. Enter the GitHub link and paste the changelog from the [1.1.0 release notes](release-notes-1.1.0.md).
+5. Check **AI was used during development / При разработке использовался ИИ**.
+6. Read the [publication rules](https://pulsesync.dev/wiki/main/app/addons/publishing), accept them if you agree, and submit.
 
-The installed client gates submission on its `ClientExtensionStorePublishing` account feature. If Publication is unavailable after signing in with a matching author, publishing access must be enabled for that account by PulseSync.
+A successful submission goes to moderator review. It appears in the catalog after approval.
 
-Before submitting, check playback in the desktop app: start a track, use Play next on search, album, and liked-track rows, and confirm the selected track is directly after the current track in the queue.
-
-## Preparation evidence
-
-The installed PulseSync 2.16.0-beta client requires a GitHub URL, a changelog, a rules acknowledgement, and an AI-development declaration. It packages the addon and submits it to `/extensions/create`; updates use `/extensions/{id}/update`. Publication rules and availability may change, so follow the current UI when submitting.
-
-The addon references Yandex Music's installed icon sprite; native icon artwork is not copied into the addon package.
+If Publication is missing even though the author matches your signed-in account, PulseSync may need to enable publishing access for that account.

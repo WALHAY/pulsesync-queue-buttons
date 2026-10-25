@@ -1,27 +1,26 @@
-# PlayNextInline
+# QueueButtons
 
-Adds **Play next / Играть следующим** immediately to the **left of Like**, on the same line as each track in search results, albums, and liked tracks. Other playlists using the same track rows also work.
+Add songs to your Yandex Music queue straight from the track list. QueueButtons adds two buttons to search results, albums, and Liked tracks:
 
-Yandex Music already offers this action in the track context menu. This addon makes it available directly on the row.
+- **Play next / Играть следующим** — puts the song right after the current one.
+- **Add to end of queue / Добавить в конец очереди** — puts it after everything already queued.
 
-Click the queue icon or focus it and press Enter/Space. The selected track is inserted after the currently playing track. Selecting several tracks follows Yandex Music's native behavior: the most recently selected track goes next.
-
-The button stays visible and uses Yandex Music's built-in **Play next** icon, a 20px glyph inside a 40px control. Its colors, hover, and keyboard-focus ring follow the native track controls. It is disabled for unavailable tracks or disabled Like controls. Track cards without an inline Like button are left alone.
+You'll find both to the left of the heart, with Play next closest to it. They use the client's own icons and colors. Your current song keeps playing when you click them.
 
 ## Install
 
-1. Open PulseSync.
-2. Drag `PlayNextInline-1.0.1.pext` into its window and import it.
-3. Enable **PlayNextInline** in your addons library. PulseSync may reload Yandex Music when enabling a script addon.
+Open PulseSync, drag in `QueueButtons-1.1.0.pext`, then enable **QueueButtons** in the addons library. Yandex Music may reload.
 
-If dropping the file does nothing on macOS, open Terminal, type `open -a PulseSync ` (including the trailing space), drag the `.pext` file into Terminal to insert its path, and press Enter. This uses PulseSync's native file-opening handler. Then open the addons library and enable **PlayNextInline**.
+If dragging does nothing on macOS, open Terminal and type `open -a PulseSync ` with a space at the end. Drag the `.pext` file into Terminal to add its path, then press Enter.
 
-Keep PulseSync running alongside the modified Yandex Music client. To remove the addon, disable or delete it in PulseSync.
+This is an update to **PlayNextInline**. Import it over the old version; there is no need to install a second addon.
 
-## Compatibility
+## Good to know
 
-Requires a PulseSync mod exposing `window.pulsesyncApi.playerInstance.injectNext`. Integration was checked against installed PulseSync **2.16.0-beta** and mod **1.33.2**, whose bundled Yandex Music frontend reports **5.113.2** (host compatibility version **5.112.0**).
+Keep PulseSync running alongside the modified Yandex Music client. Hover over a button for its label, or use Tab and Enter/Space to activate it.
 
-The script uses Yandex Music's native queue operation and references the client's own `/icons/sprite.svg#playNext_xxs` icon. It makes no external network requests and has no runtime dependencies. DOM selectors, icon names, and React's private DOM props can change with client updates; a track-link fallback is included. If the track or queue cannot be found, it displays an error and leaves the queue alone.
+Songs added to the end stay in the order you picked them. With Play next, the last song you picked goes next. Unavailable tracks have disabled buttons.
 
-Browser tests use real React track-row fixtures and a simulated queue. Actual playback in an authenticated desktop session still needs a manual check: start a track, click this button for another track, and confirm the selected track is immediately next in the queue.
+The addon uses the same queue actions as Yandex Music's track menu. If it can't add a song, it shows a message so you can try the menu instead. Client updates can affect compatibility.
+
+To remove the buttons, disable QueueButtons in PulseSync.

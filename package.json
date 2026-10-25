@@ -1,9 +1,9 @@
 {
-  "name": "pulsesync-play-next",
-  "version": "1.0.1",
+  "name": "pulsesync-queue-buttons",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "Inline Play next button for PulseSync track rows",
+  "description": "Inline Play next and Add to end of queue buttons for PulseSync",
   "scripts": {
     "check": "node --check addon/script.js",
     "test": "playwright test",

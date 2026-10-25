@@ -1,12 +1,18 @@
 (() => {
   'use strict';
 
-  const INSTANCE = '__pulseSyncPlayNextInline';
+  const INSTANCE = '__pulseSyncQueueButtons';
+  window.__pulseSyncPlayNextInline?.dispose();
   window[INSTANCE]?.dispose();
 
   const ROW = '[class*="CommonTrack_root__"], [data-test-id="SEARCH_TRACK_CARD"]';
   const LIKE = 'button[data-test-id="LIKE_BUTTON"]';
-  const BUTTON = 'ps-play-next-button';
+  const BUTTON = 'ps-queue-button';
+  // Keep Play next closest to Like, with Add to end just before it.
+  const ACTIONS = [
+    { key: 'last', method: 'injectLast', icon: 'playLast_xxs', testId: 'PULSESYNC_ADD_TO_QUEUE_BUTTON' },
+    { key: 'next', method: 'injectNext', icon: 'playNext_xxs', testId: 'PULSESYNC_PLAY_NEXT_BUTTON' },
+  ];
   const sourceScript = document.currentScript;
   const abort = new AbortController();
   const timers = new Set();
@@ -18,13 +24,13 @@
   let statusTimer;
 
   const messages = () => document.documentElement.lang.toLowerCase().startsWith('ru') ? {
-    next: 'Играть следующим',
-    added: 'Следующим в очереди',
-    failed: 'Не удалось добавить трек. Попробуйте «Играть следующим» в меню трека.',
+    next: { label: 'Играть следующим', added: 'Следующим в очереди' },
+    last: { label: 'Добавить в конец очереди', added: 'Добавлено в конец очереди' },
+    failed: 'Не удалось добавить трек. Попробуйте добавить его через меню трека.',
   } : {
-    next: 'Play next',
-    added: 'Next in queue',
-    failed: 'Could not add this track. Try “Play next” in the track menu.',
+    next: { label: 'Play next', added: 'Next in queue' },
+    last: { label: 'Add to end of queue', added: 'Added to end of queue' },
+    failed: 'Could not add this track. Try adding it through the track menu.',
   };
 
   function later(callback, delay) {
@@ -90,7 +96,7 @@
   function announce(text) {
     if (!status) {
       status = document.createElement('div');
-      status.className = 'ps-play-next-status';
+      status.className = 'ps-queue-status';
       status.setAttribute('role', 'status');
       status.setAttribute('aria-live', 'polite');
       status.setAttribute('aria-atomic', 'true');
@@ -102,7 +108,7 @@
     statusTimer = later(() => { status.textContent = ''; }, 3000);
   }
 
-  async function playNext(button, like) {
+  async function queueTrack(button, like, action) {
     if (button.getAttribute('aria-busy') === 'true') return;
     const row = like.closest(ROW);
     if (!row || !like.isConnected) return;
@@ -110,15 +116,15 @@
       const track = getTrack(row, like);
       if (unavailable(row, like, track)) return;
       const player = window.pulsesyncApi?.playerInstance;
-      if (!track || typeof player?.injectNext !== 'function') throw new Error('Track or native queue unavailable');
+      if (!track || typeof player?.[action.method] !== 'function') throw new Error('Track or native queue unavailable');
       button.setAttribute('aria-busy', 'true');
       // Same operation and entity format as Yandex Music's track context menu.
       // Do not start playback or replace the current playback context.
-      await player.injectNext({ entitiesData: [{ type: 'unloaded', meta: { id: track.entityId } }] });
-      if (!disposed) announce(`${messages().added}${track.title ? `: ${track.title}` : ''}`);
+      await player[action.method]({ entitiesData: [{ type: 'unloaded', meta: { id: track.entityId } }] });
+      if (!disposed) announce(`${messages()[action.key].added}${track.title ? `: ${track.title}` : ''}`);
     } catch (error) {
       if (!disposed) {
-        console.warn('[PlayNextInline] Could not queue track:', error);
+        console.warn('[QueueButtons] Could not queue track:', error);
         announce(messages().failed);
       }
     } finally {
@@ -127,57 +133,68 @@
     }
   }
 
-  function addButton(row) {
+  function createButton(like, action) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = BUTTON;
+    button.dataset.testId = action.testId;
+    // Reference the client's icons instead of shipping copies of its artwork.
+    button.innerHTML = '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">' +
+      `<use href="/icons/sprite.svg#${action.icon}"></use></svg>`;
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      void queueTrack(button, like, action);
+    }, { signal: abort.signal });
+    // Stop row playback/navigation while keeping native keyboard activation.
+    for (const type of ['dblclick', 'pointerdown', 'pointerup', 'mousedown', 'mouseup']) {
+      button.addEventListener(type, event => event.stopPropagation(), { signal: abort.signal });
+    }
+    for (const type of ['keydown', 'keyup']) {
+      button.addEventListener(type, event => {
+        if (event.key === 'Enter' || event.key === ' ') event.stopPropagation();
+      }, { signal: abort.signal });
+    }
+    return button;
+  }
+
+  function addButtons(row) {
     const like = row.querySelector(LIKE);
     if (!like || like.closest(ROW) !== row) {
       row.querySelectorAll(`.${BUTTON}`).forEach(button => button.remove());
       return;
     }
-    let button = buttons.get(like);
-    if (!button) {
-      button = document.createElement('button');
-      button.type = 'button';
-      button.className = BUTTON;
-      button.dataset.testId = 'PULSESYNC_PLAY_NEXT_BUTTON';
-      // Use the same built-in symbol as the native track menu. The artwork
-      // stays in the client and follows its icon updates.
-      button.innerHTML = '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">' +
-        '<use href="/icons/sprite.svg#playNext_xxs"></use></svg>';
-      button.addEventListener('click', event => {
-        event.preventDefault();
-        event.stopPropagation();
-        void playNext(button, like);
-      }, { signal: abort.signal });
-      // Stop the row's playback/navigation handlers while retaining native
-      // button focus and Enter/Space activation.
-      for (const type of ['dblclick', 'pointerdown', 'pointerup', 'mousedown', 'mouseup']) {
-        button.addEventListener(type, event => event.stopPropagation(), { signal: abort.signal });
-      }
-      for (const type of ['keydown', 'keyup']) {
-        button.addEventListener(type, event => {
-          if (event.key === 'Enter' || event.key === ' ') event.stopPropagation();
-        }, { signal: abort.signal });
-      }
-      buttons.set(like, button);
+    let rowButtons = buttons.get(like);
+    if (!rowButtons) {
+      rowButtons = ACTIONS.map(action => createButton(like, action));
+      buttons.set(like, rowButtons);
     }
     // React may replace the Like button without replacing the row.
     for (const stale of row.querySelectorAll(`.${BUTTON}`)) {
-      if (stale !== button) stale.remove();
+      if (!rowButtons.includes(stale)) stale.remove();
     }
-    if (like.previousElementSibling !== button) like.before(button);
-    const label = messages().next;
-    if (button.title !== label) {
-      button.title = label;
-      button.setAttribute('aria-label', label);
+    let anchor = like;
+    for (let i = rowButtons.length - 1; i >= 0; i--) {
+      const button = rowButtons[i];
+      if (anchor.previousElementSibling !== button) anchor.before(button);
+      anchor = button;
     }
     const disabled = unavailable(row, like, getTrack(row, like));
-    if (button.disabled !== disabled) button.disabled = disabled;
+    const labels = messages();
+    rowButtons.forEach((button, index) => {
+      const label = labels[ACTIONS[index].key].label;
+      if (button.title !== label) {
+        button.title = label;
+        button.setAttribute('aria-label', label);
+      }
+      if (button.disabled !== disabled) button.disabled = disabled;
+    });
   }
 
   function scan(scope) {
     if (scope !== document && !scope.isConnected) return;
-    if (scope.matches?.(ROW)) addButton(scope);
-    scope.querySelectorAll?.(ROW).forEach(addButton);
+    if (scope.matches?.(ROW)) addButtons(scope);
+    scope.querySelectorAll?.(ROW).forEach(addButtons);
   }
 
   function schedule(scope) {
@@ -194,11 +211,11 @@
     if (sourceScript && !sourceScript.isConnected) return dispose();
     for (const record of records) {
       const target = record.target.nodeType === 1 ? record.target : record.target.parentElement;
-      if (target?.closest(`.${BUTTON}, .ps-play-next-status`)) continue;
+      if (target?.closest(`.${BUTTON}, .ps-queue-status`)) continue;
       const row = target?.closest(ROW);
       if (row) schedule(row);
       for (const node of record.addedNodes) {
-        if (node.nodeType === 1 && !node.matches(`.${BUTTON}, .ps-play-next-status`)) schedule(node);
+        if (node.nodeType === 1 && !node.matches(`.${BUTTON}, .ps-queue-status`)) schedule(node);
       }
     }
   });
