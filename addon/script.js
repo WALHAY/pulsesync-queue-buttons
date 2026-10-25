@@ -9,7 +9,8 @@
   const ROW = '[class*="CommonTrack_root__"], [data-test-id="SEARCH_TRACK_CARD"]';
   const LIKE = 'button[data-test-id="LIKE_BUTTON"]';
   const BUTTON = 'ps-queue-button';
-  const OWN_ELEMENTS = `.${BUTTON}, .ps-queue-status`;
+  const GROUP = 'ps-queue-buttons';
+  const OWN_ELEMENTS = `.${GROUP}, .${BUTTON}, .ps-queue-status`;
   const POINTER_EVENTS = ['dblclick', 'pointerdown', 'pointerup', 'mousedown', 'mouseup'];
   // Track-row order: Play next, Add to end, Like.
   const ACTIONS = [
@@ -252,41 +253,45 @@
   function getControls(like) {
     let controls = controlsByLike.get(like);
     if (!controls) {
-      controls = ACTIONS.map(action => ({ action, button: createButton(like, action) }));
+      const group = document.createElement('span');
+      group.className = GROUP;
+      controls = {
+        group,
+        items: ACTIONS.map(action => ({ action, button: createButton(like, action) })),
+      };
       controlsByLike.set(like, controls);
     }
     return controls;
   }
 
-  function removeStaleButtons(row, controls = []) {
-    for (const button of row.querySelectorAll(`.${BUTTON}`)) {
-      if (!controls.some(control => control.button === button)) button.remove();
+  function removeStaleControls(row, group) {
+    for (const element of row.querySelectorAll(`.${GROUP}, .${BUTTON}`)) {
+      if (element !== group && !group?.contains(element)) element.remove();
     }
   }
 
-  function placeControls(controls, like) {
-    let anchor = like;
-    for (let i = controls.length - 1; i >= 0; i--) {
-      const { button } = controls[i];
-      if (anchor.previousElementSibling !== button) anchor.before(button);
-      anchor = button;
+  function placeControls({ group, items }, like) {
+    for (const [index, { button }] of items.entries()) {
+      if (group.children[index] !== button)
+        group.insertBefore(button, group.children[index] ?? null);
     }
+    if (like.previousElementSibling !== group) like.before(group);
   }
 
   function addButtons(row) {
     const like = row.querySelector(LIKE);
     if (!like || like.closest(ROW) !== row) {
-      removeStaleButtons(row);
+      removeStaleControls(row);
       return;
     }
 
     const controls = getControls(like);
     // React may replace the Like button without replacing the row.
-    removeStaleButtons(row, controls);
+    removeStaleControls(row, controls.group);
     placeControls(controls, like);
     const disabled = unavailable(row, like, getTrack(row, like));
     const labels = messages();
-    for (const { button, action } of controls) {
+    for (const { button, action } of controls.items) {
       const label = labels[action.key].label;
       if (button.title !== label) {
         button.title = label;
@@ -336,7 +341,7 @@
     timers.forEach(clearTimeout);
     timers.clear();
     scopes.clear();
-    removeStaleButtons(document);
+    removeStaleControls(document);
     status?.remove();
     if (window[INSTANCE]?.dispose === dispose) delete window[INSTANCE];
   }

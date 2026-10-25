@@ -49,3 +49,9 @@ Evidence in the installed application archive:
 - `app/_next/static/chunks/app/(product)/layout-bd9f7baf96808a06.js`: My Vibe's `beforeInject` hook.
 
 The actual installed hook was executed in isolation: with one manual entry and two recommendations, a context-free append stayed at position 4; album and `various` source contexts both moved it to position 2, directly after the manual entry. The browser regression test reproduces this distinction and fails against version 1.1.1. All 24 browser tests pass with the fix. This verifies queue placement logic, not live desktop playback.
+
+### My Vibe queue preview
+
+Yandex Music 5.124.1 limits the upcoming-tracks display to one track in My Vibe and 125 tracks in other contexts. This limit is in the `PlayQueue` model's `setAfterTracksIds` action, in `app/_next/static/chunks/1968-2b981903fbb3983c.js`. Refreshing the list applies the same limit again; it is not a CSS visibility rule.
+
+The installed PulseSync runtime exposes `getQueueSnapshot` and `onQueueChange` for reading loaded queue data, but no supported control for this display limit. Expanding the native list would require changing internal client behavior. A separate read-only view could use the queue API, but would only show data the player has already loaded. The owner chose to keep the native queue as it is.

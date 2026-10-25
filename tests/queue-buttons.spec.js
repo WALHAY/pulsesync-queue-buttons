@@ -55,9 +55,11 @@ test('places both buttons left of Like, keeping Add to end closest, on all three
     await expect(button).toHaveAccessibleName('Play next');
     await expect(row.locator(last)).toBeVisible();
     await expect(row.locator(last)).toHaveAccessibleName('Add to end of queue');
-    expect(await row.locator(last).evaluate(node => node.nextElementSibling?.dataset.testId)).toBe(
-      'LIKE_BUTTON',
-    );
+    expect(
+      await row
+        .locator(last)
+        .evaluate(node => node.parentElement.nextElementSibling?.dataset.testId),
+    ).toBe('LIKE_BUTTON');
     expect(await button.evaluate(node => node.nextElementSibling?.dataset.testId)).toBe(
       'PULSESYNC_ADD_TO_QUEUE_BUTTON',
     );
@@ -67,8 +69,10 @@ test('places both buttons left of Like, keeping Add to end closest, on all three
       row.locator(like).boundingBox(),
     ]);
     expect(nextBox.x + nextBox.width).toBeLessThanOrEqual(endBox.x);
+    expect(endBox.x - nextBox.x - nextBox.width).toBe(0);
     expect(nextBox.y).toBe(endBox.y);
     expect(endBox.x + endBox.width).toBeLessThanOrEqual(likeBox.x);
+    expect(likeBox.x - endBox.x - endBox.width).toBe(20);
     expect(Math.abs(endBox.y + endBox.height / 2 - likeBox.y - likeBox.height / 2)).toBeLessThan(1);
   }
   await expect(page.locator('[data-test-id="ALBUM_CARD"]').locator(queueButtons)).toHaveCount(0);
@@ -294,6 +298,7 @@ test('handles appended rows, replaced Like buttons, and removed Like buttons', a
     window.fixture.render([{ id: '1', albumId: '800', title: 'Track 0', noLike: true }]),
   );
   await expect(page.locator(queueButtons)).toHaveCount(0);
+  await expect(page.locator('.ps-queue-buttons')).toHaveCount(0);
 });
 
 test('unavailable tracks and signed-out controls remain disabled', async ({ page }) => {
@@ -417,6 +422,7 @@ test('reloading and disabling the addon remove old buttons, observers, and notif
     .evaluate(node => node.remove());
   await expect(page.locator(queueButtons)).toHaveCount(0);
   await expect(page.getByRole('status')).toHaveCount(0);
+  await expect(page.locator('.ps-queue-buttons')).toHaveCount(0);
   await page.evaluate(() => window.fixture.render([{ id: '77', title: 'After cleanup' }]));
   await expect(page.locator(queueButtons)).toHaveCount(0);
 });

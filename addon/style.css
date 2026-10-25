@@ -1,3 +1,11 @@
+.ps-queue-buttons {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0;
+  margin-inline-end: 0.25rem;
+}
+
 .ps-queue-button {
   display: inline-flex;
   flex: 0 0 2.5rem;
