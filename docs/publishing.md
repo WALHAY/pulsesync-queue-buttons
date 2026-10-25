@@ -1,6 +1,6 @@
 # Publishing QueueButtons
 
-The current build is [QueueButtons-1.1.2.pext](../dist/QueueButtons-1.1.2.pext). Nothing has been submitted to the catalog yet.
+Run `npm ci` and `npm run build` from the project folder to create `dist/QueueButtons-1.1.2.pext`. Built packages are ignored by Git. Nothing has been submitted to the catalog yet.
 
 This guide follows the [PulseSync addon publication rules](https://pulsesync.dev/wiki/main/app/addons/publishing), revision **20 April 2026**, using the text supplied by the owner. Cloudflare blocked direct access during the review. The extra notes about the publication form come from the [official PulseSync client source](https://github.com/PulseSync-LLC/PulseSync-client/blob/main/src/renderer/widgets/modalContainer/modals/ExtensionPublicationModal.tsx).
 

@@ -1,8 +1,6 @@
-import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 import { build } from 'esbuild';
-import { strFromU8, unzipSync } from 'fflate';
 
 const addon = fileURLToPath(new URL('../addon/script.js', import.meta.url));
 const css = fileURLToPath(new URL('../addon/style.css', import.meta.url));
@@ -394,11 +392,10 @@ test('a missing append API cannot insert at the wrong position, and Play next st
 test('upgrades the previous PlayNextInline script without leaving duplicate controls', async ({
   page,
 }) => {
-  const archive = unzipSync(
-    await readFile(new URL('../dist/PlayNextInline-1.0.1.pext', import.meta.url)),
-  );
   await page.evaluate(() => window.__pulseSyncQueueButtons.dispose());
-  await page.addScriptTag({ content: strFromU8(archive['script.js']) });
+  await page.addScriptTag({
+    path: fileURLToPath(new URL('./fixtures/play-next-1.0.1.js', import.meta.url)),
+  });
   await expect(page.locator(next)).toHaveCount(3);
   await page.addScriptTag({ path: addon });
   await expect(page.locator(queueButtons)).toHaveCount(6);

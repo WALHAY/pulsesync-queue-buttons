@@ -13,8 +13,15 @@ _Layout illustration made with test rows and the client's native icons._
 
 ## Install
 
-1. Get [QueueButtons-1.1.2.pext](dist/QueueButtons-1.1.2.pext).
-2. Open PulseSync and drag the file into its window.
+Build the package from the project folder with Node.js 24 and npm:
+
+```sh
+npm ci
+npm run build
+```
+
+1. Find `QueueButtons-1.1.2.pext` in `dist/`.
+2. Open PulseSync and drag that file into its window.
 3. Find **QueueButtons** in the addons library and enable it. Yandex Music may reload.
 
 If dragging does nothing on macOS, run this from the project folder:
@@ -49,6 +56,6 @@ npm run build
 
 `npm run check` checks formatting, imports, and lint rules. Use `npm run format` to format files, or `npm run lint:fix` to apply safe lint fixes too. GitHub Actions runs the checks, tests, and build on pushes and pull requests.
 
-The build writes an importable `.pext` file to `dist/`. Browser tests cover both queue actions, button placement, keyboard controls, loading more tracks, and upgrading from PlayNextInline. They use a simulated queue; check both actions in the desktop client before publishing.
+The build writes an importable `.pext` file to `dist/`. Generated packages, installed dependencies, and test reports are ignored by Git. Browser tests cover both queue actions, button placement, keyboard controls, loading more tracks, and upgrading from PlayNextInline. They use a simulated queue; check both actions in the desktop client before publishing.
 
 [Publishing guide](docs/publishing.md) · [Release notes](docs/release-notes-1.1.2.md) · [Original addon search](docs/existing-addons.md)
