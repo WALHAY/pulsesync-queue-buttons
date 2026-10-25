@@ -8,17 +8,17 @@ Checked October 25, 2026 for a button that inserts a selected track immediately 
 
 ## Sources checked
 
-| Source | Relevant behavior | Match? |
-| --- | --- | --- |
-| Installed Default theme and FckCensor 1.4.3 | Default styling and censored-track replacement | No inline Play next control |
-| [BetterPlayer](https://github.com/PulseSync-LLC/BetterPlayer-addon) | Fullscreen player customization and opening the queue | No enqueue-next control on track rows |
-| [Liked Sort](https://github.com/xenkalinka/liked-sort-addon) | Reorders liked tracks by updating like timestamps | Changes collection order, not the playback queue |
-| [CopyTrackName](https://github.com/mak7im01/CopyTrackName) | Adds track information copy buttons near titles | Different action and placement |
-| [CoverDownloader](https://github.com/mak7im01/CoverDownloader) and [CoverDownloaderInline](https://github.com/mak7im01/CoverDownloaderInline) | Adds cover download buttons | No queue operation |
-| [WebSocket Controls](https://github.com/WolfySoCute/pulsesync-controls-addon) | Remote skip, pause, and volume controls | Does not queue a selected track next |
-| [HokenSync](https://github.com/flocsyc/HokenSync) | Lyrics search and editing | Reads current track information; no inline Play next action |
-| [Player Controls Grid](https://github.com/mak7im01/Player-Controls-Grid) | Rearranges player controls and queue visibility | Does not add an action to track rows |
-| [Yandex Music Download Addon](https://github.com/kesevone/yandex-music-download-addon) | Windows download addon with a persistent download queue | Download queue, not playback queue |
+| Source                                                                                                                                        | Relevant behavior                                       | Match?                                                      |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------- |
+| Installed Default theme and FckCensor 1.4.3                                                                                                   | Default styling and censored-track replacement          | No inline Play next control                                 |
+| [BetterPlayer](https://github.com/PulseSync-LLC/BetterPlayer-addon)                                                                           | Fullscreen player customization and opening the queue   | No enqueue-next control on track rows                       |
+| [Liked Sort](https://github.com/xenkalinka/liked-sort-addon)                                                                                  | Reorders liked tracks by updating like timestamps       | Changes collection order, not the playback queue            |
+| [CopyTrackName](https://github.com/mak7im01/CopyTrackName)                                                                                    | Adds track information copy buttons near titles         | Different action and placement                              |
+| [CoverDownloader](https://github.com/mak7im01/CoverDownloader) and [CoverDownloaderInline](https://github.com/mak7im01/CoverDownloaderInline) | Adds cover download buttons                             | No queue operation                                          |
+| [WebSocket Controls](https://github.com/WolfySoCute/pulsesync-controls-addon)                                                                 | Remote skip, pause, and volume controls                 | Does not queue a selected track next                        |
+| [HokenSync](https://github.com/flocsyc/HokenSync)                                                                                             | Lyrics search and editing                               | Reads current track information; no inline Play next action |
+| [Player Controls Grid](https://github.com/mak7im01/Player-Controls-Grid)                                                                      | Rearranges player controls and queue visibility         | Does not add an action to track rows                        |
+| [Yandex Music Download Addon](https://github.com/kesevone/yandex-music-download-addon)                                                        | Windows download addon with a persistent download queue | Download queue, not playback queue                          |
 
 Read the listed READMEs and scripts, except the download addon where the README was sufficient. Also enumerated [official PulseSync repositories](https://github.com/orgs/PulseSync-LLC/repositories) and searched GitHub repository metadata/READMEs for PulseSync/Yandex Music with `play next`, `PlayNext`, `next`, `queue`, `очередь`, and `следующим`. Selected scripts were searched for `injectNext`, `playNext`, related English/Russian terms, and button insertion code.
 

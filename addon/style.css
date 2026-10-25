@@ -14,7 +14,9 @@
   color: var(--text-enabled-color, var(--ym-controls-color-primary-text-enabled, #a6a6a6));
   vertical-align: middle;
   cursor: pointer;
-  transition: opacity var(--ym-duration-transition, 0.15s), color var(--ym-duration-transition, 0.15s);
+  transition:
+    opacity var(--ym-duration-transition, 0.15s),
+    color var(--ym-duration-transition, 0.15s);
 }
 
 .ps-queue-button:hover:not(:disabled),
@@ -24,7 +26,8 @@
 
 .ps-queue-button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 var(--ym-spacer-size-xxxs, 2px) var(--ym-controls-color-secondary-default-focused_stroke, #ffdb4d);
+  box-shadow: 0 0 0 var(--ym-spacer-size-xxxs, 2px)
+    var(--ym-controls-color-secondary-default-focused_stroke, #ffdb4d);
 }
 
 .ps-queue-button:disabled {

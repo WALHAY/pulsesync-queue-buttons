@@ -9,18 +9,18 @@ Both buttons sit to the left of the heart in search results, albums, and Liked t
 
 ![QueueButtons preview](docs/queue-buttons-preview.png)
 
-*A preview of the layout using the client's native icons.*
+_Layout illustration made with test rows and the client's native icons._
 
 ## Install
 
-1. Get [QueueButtons-1.1.0.pext](dist/QueueButtons-1.1.0.pext).
+1. Get [QueueButtons-1.1.1.pext](dist/QueueButtons-1.1.1.pext).
 2. Open PulseSync and drag the file into its window.
 3. Find **QueueButtons** in the addons library and enable it. Yandex Music may reload.
 
 If dragging does nothing on macOS, run this from the project folder:
 
 ```sh
-open -a PulseSync dist/QueueButtons-1.1.0.pext
+open -a PulseSync dist/QueueButtons-1.1.1.pext
 ```
 
 Already using **PlayNextInline**? Import this file over it. QueueButtons is the same addon under a new name, so it updates your existing installation.
@@ -45,6 +45,8 @@ npm test
 npm run build
 ```
 
+`npm run check` checks formatting, imports, and lint rules. Use `npm run format` to format files, or `npm run lint:fix` to apply safe lint fixes too. GitHub Actions runs the checks, tests, and build on pushes and pull requests.
+
 The build writes an importable `.pext` file to `dist/`. Browser tests cover both queue actions, button placement, keyboard controls, loading more tracks, and upgrading from PlayNextInline. They use a simulated queue; check both actions in the desktop client before publishing.
 
-[Publishing guide](docs/publishing.md) · [Release notes](docs/release-notes-1.1.0.md) · [Original addon search](docs/existing-addons.md)
+[Publishing guide](docs/publishing.md) · [Release notes](docs/release-notes-1.1.1.md) · [Original addon search](docs/existing-addons.md)

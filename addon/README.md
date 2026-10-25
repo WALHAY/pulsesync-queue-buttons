@@ -9,7 +9,7 @@ You'll find both to the left of the heart, with Play next closest to it. They us
 
 ## Install
 
-Open PulseSync, drag in `QueueButtons-1.1.0.pext`, then enable **QueueButtons** in the addons library. Yandex Music may reload.
+Open PulseSync, drag in `QueueButtons-1.1.1.pext`, then enable **QueueButtons** in the addons library. Yandex Music may reload.
 
 If dragging does nothing on macOS, open Terminal and type `open -a PulseSync ` with a space at the end. Drag the `.pext` file into Terminal to add its path, then press Enter.
 

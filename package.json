@@ -1,15 +1,20 @@
 {
   "name": "pulsesync-queue-buttons",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
   "description": "Inline Play next and Add to end of queue buttons for PulseSync",
   "scripts": {
-    "check": "node --check addon/script.js",
+    "check": "biome check . --error-on-warnings",
+    "lint": "biome lint . --error-on-warnings",
+    "lint:fix": "biome check . --write",
+    "format": "biome format . --write",
+    "format:check": "biome format .",
     "test": "playwright test",
     "build": "node scripts/package.mjs"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.3",
     "@playwright/test": "^1.64.1",
     "esbuild": "^0.28.2",
     "fflate": "^0.8.3",

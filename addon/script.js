@@ -1,4 +1,5 @@
 (() => {
+  // biome-ignore lint/suspicious/noRedundantUseStrict: PulseSync injects this file as a classic script, not an ES module.
   'use strict';
 
   const INSTANCE = '__pulseSyncQueueButtons';
@@ -8,32 +9,52 @@
   const ROW = '[class*="CommonTrack_root__"], [data-test-id="SEARCH_TRACK_CARD"]';
   const LIKE = 'button[data-test-id="LIKE_BUTTON"]';
   const BUTTON = 'ps-queue-button';
+  const OWN_ELEMENTS = `.${BUTTON}, .ps-queue-status`;
+  const POINTER_EVENTS = ['dblclick', 'pointerdown', 'pointerup', 'mousedown', 'mouseup'];
   // Keep Play next closest to Like, with Add to end just before it.
   const ACTIONS = [
-    { key: 'last', method: 'injectLast', icon: 'playLast_xxs', testId: 'PULSESYNC_ADD_TO_QUEUE_BUTTON' },
-    { key: 'next', method: 'injectNext', icon: 'playNext_xxs', testId: 'PULSESYNC_PLAY_NEXT_BUTTON' },
+    {
+      key: 'last',
+      method: 'injectLast',
+      icon: 'playLast_xxs',
+      testId: 'PULSESYNC_ADD_TO_QUEUE_BUTTON',
+    },
+    {
+      key: 'next',
+      method: 'injectNext',
+      icon: 'playNext_xxs',
+      testId: 'PULSESYNC_PLAY_NEXT_BUTTON',
+    },
   ];
   const sourceScript = document.currentScript;
   const abort = new AbortController();
   const timers = new Set();
   const scopes = new Set();
-  const buttons = new WeakMap();
+  const controlsByLike = new WeakMap();
   let frame = 0;
   let disposed = false;
   let status;
   let statusTimer;
 
-  const messages = () => document.documentElement.lang.toLowerCase().startsWith('ru') ? {
-    next: { label: 'Играть следующим', added: 'Следующим в очереди' },
-    last: { label: 'Добавить в конец очереди', added: 'Добавлено в конец очереди' },
-    failed: 'Не удалось добавить трек. Попробуйте добавить его через меню трека.',
-  } : {
-    next: { label: 'Play next', added: 'Next in queue' },
-    last: { label: 'Add to end of queue', added: 'Added to end of queue' },
-    failed: 'Could not add this track. Try adding it through the track menu.',
+  const MESSAGES = {
+    ru: {
+      next: { label: 'Играть следующим', added: 'Следующим в очереди' },
+      last: { label: 'Добавить в конец очереди', added: 'Добавлено в конец очереди' },
+      failed: 'Не удалось добавить трек. Попробуйте добавить его через меню трека.',
+    },
+    en: {
+      next: { label: 'Play next', added: 'Next in queue' },
+      last: { label: 'Add to end of queue', added: 'Added to end of queue' },
+      failed: 'Could not add this track. Try adding it through the track menu.',
+    },
   };
 
+  function messages() {
+    return MESSAGES[document.documentElement.lang.toLowerCase().startsWith('ru') ? 'ru' : 'en'];
+  }
+
   function later(callback, delay) {
+    if (disposed) return;
     const id = setTimeout(() => {
       timers.delete(id);
       if (!disposed) callback();
@@ -47,8 +68,8 @@
   function trackFromProps(props) {
     const pending = [props];
     const seen = new Set();
-    while (pending.length && seen.size < 150) {
-      const value = pending.shift();
+    for (let index = 0; index < pending.length && seen.size < 150; index++) {
+      const value = pending[index];
       if (!value || typeof value !== 'object' || seen.has(value)) continue;
       seen.add(value);
       if (value.track?.entityId || value.track?.id) return value.track;
@@ -58,7 +79,7 @@
     return null;
   }
 
-  function getTrack(row, like) {
+  function trackFromReact(row, like) {
     // Start with the row's current props, before looking at nested controls.
     const nodes = [row];
     for (let node = like; node && node !== row; node = node.parentElement) nodes.push(node);
@@ -66,34 +87,55 @@
       const key = Object.keys(node).find(key => key.startsWith('__reactProps$'));
       const track = key && trackFromProps(node[key]);
       if (track) {
-        const entityId = track.entityId || (track.albumId ? `${track.id}:${track.albumId}` : track.id);
-        return { entityId: String(entityId), title: track.title || '', available: track.isAvailable !== false };
+        const entityId =
+          track.entityId || (track.albumId ? `${track.id}:${track.albumId}` : track.id);
+        return {
+          entityId: String(entityId),
+          title: track.title || '',
+          available: track.isAvailable !== false,
+        };
       }
     }
 
-    // A track link is sufficient when React's private DOM props are unavailable.
-    // Never use an album link or a track from elsewhere on the page.
+    return null;
+  }
+
+  function trackFromLink(row) {
+    // Only accept a track link from this row when React's props aren't available.
     for (const link of row.querySelectorAll('a[href*="/track/"]')) {
       let path;
-      try { path = new URL(link.getAttribute('href'), document.baseURI).pathname; }
-      catch { continue; }
+      try {
+        path = new URL(link.getAttribute('href'), document.baseURI).pathname;
+      } catch {
+        continue;
+      }
       const match = path.match(/^(?:\/album\/(\d+))?\/track\/(\d+)\/?$/);
-      if (match) return {
-        entityId: match[1] ? `${match[2]}:${match[1]}` : match[2],
-        title: link.textContent.trim(),
-        available: true,
-      };
+      if (match)
+        return {
+          entityId: match[1] ? `${match[2]}:${match[1]}` : match[2],
+          title: link.textContent.trim(),
+          available: true,
+        };
     }
     return null;
   }
 
+  function getTrack(row, like) {
+    return trackFromReact(row, like) ?? trackFromLink(row);
+  }
+
   function unavailable(row, like, track) {
-    return like.disabled || like.getAttribute('aria-disabled') === 'true' ||
+    return (
+      like.disabled ||
+      like.getAttribute('aria-disabled') === 'true' ||
       row.getAttribute('aria-disabled') === 'true' ||
-      row.className.includes('CommonTrack_root_disabled__') || track?.available === false;
+      row.className.includes('CommonTrack_root_disabled__') ||
+      track?.available === false
+    );
   }
 
   function announce(text) {
+    if (disposed) return;
     if (!status) {
       status = document.createElement('div');
       status.className = 'ps-queue-status';
@@ -105,23 +147,36 @@
     clearTimeout(statusTimer);
     timers.delete(statusTimer);
     status.textContent = text;
-    statusTimer = later(() => { status.textContent = ''; }, 3000);
+    statusTimer = later(() => {
+      status.textContent = '';
+    }, 3000);
+  }
+
+  function getQueueRequest(row, like, method) {
+    const track = getTrack(row, like);
+    if (unavailable(row, like, track)) return null;
+    const player = window.pulsesyncApi?.playerInstance;
+    if (!track || typeof player?.[method] !== 'function') {
+      throw new Error('Track or native queue unavailable');
+    }
+    return { track, player };
   }
 
   async function queueTrack(button, like, action) {
-    if (button.getAttribute('aria-busy') === 'true') return;
+    if (button.getAttribute('aria-busy') === 'true' || !like.isConnected) return;
     const row = like.closest(ROW);
-    if (!row || !like.isConnected) return;
+    if (!row) return;
     try {
-      const track = getTrack(row, like);
-      if (unavailable(row, like, track)) return;
-      const player = window.pulsesyncApi?.playerInstance;
-      if (!track || typeof player?.[action.method] !== 'function') throw new Error('Track or native queue unavailable');
+      const request = getQueueRequest(row, like, action.method);
+      if (!request) return;
+      const { track, player } = request;
       button.setAttribute('aria-busy', 'true');
       // Same operation and entity format as Yandex Music's track context menu.
       // Do not start playback or replace the current playback context.
-      await player[action.method]({ entitiesData: [{ type: 'unloaded', meta: { id: track.entityId } }] });
-      if (!disposed) announce(`${messages()[action.key].added}${track.title ? `: ${track.title}` : ''}`);
+      await player[action.method]({
+        entitiesData: [{ type: 'unloaded', meta: { id: track.entityId } }],
+      });
+      announce(`${messages()[action.key].added}${track.title ? `: ${track.title}` : ''}`);
     } catch (error) {
       if (!disposed) {
         console.warn('[QueueButtons] Could not queue track:', error);
@@ -129,8 +184,29 @@
       }
     } finally {
       // Absorb the second click of a double-click, retaining keyboard focus.
-      if (!disposed) later(() => button.removeAttribute('aria-busy'), 400);
+      later(() => button.removeAttribute('aria-busy'), 400);
     }
+  }
+
+  function createIcon(symbol) {
+    const namespace = 'http://www.w3.org/2000/svg';
+    const icon = document.createElementNS(namespace, 'svg');
+    icon.setAttribute('viewBox', '0 0 20 20');
+    icon.setAttribute('fill', 'none');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.setAttribute('focusable', 'false');
+    const use = document.createElementNS(namespace, 'use');
+    use.setAttribute('href', `/icons/sprite.svg#${symbol}`);
+    icon.append(use);
+    return icon;
+  }
+
+  function stopPropagation(event) {
+    event.stopPropagation();
+  }
+
+  function stopActivationKey(event) {
+    if (event.key === 'Enter' || event.key === ' ') event.stopPropagation();
   }
 
   function createButton(like, action) {
@@ -139,56 +215,71 @@
     button.className = BUTTON;
     button.dataset.testId = action.testId;
     // Reference the client's icons instead of shipping copies of its artwork.
-    button.innerHTML = '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">' +
-      `<use href="/icons/sprite.svg#${action.icon}"></use></svg>`;
-    button.addEventListener('click', event => {
-      event.preventDefault();
-      event.stopPropagation();
-      void queueTrack(button, like, action);
-    }, { signal: abort.signal });
+    button.append(createIcon(action.icon));
+    button.addEventListener(
+      'click',
+      event => {
+        event.preventDefault();
+        event.stopPropagation();
+        void queueTrack(button, like, action);
+      },
+      { signal: abort.signal },
+    );
     // Stop row playback/navigation while keeping native keyboard activation.
-    for (const type of ['dblclick', 'pointerdown', 'pointerup', 'mousedown', 'mouseup']) {
-      button.addEventListener(type, event => event.stopPropagation(), { signal: abort.signal });
+    for (const type of POINTER_EVENTS) {
+      button.addEventListener(type, stopPropagation, { signal: abort.signal });
     }
     for (const type of ['keydown', 'keyup']) {
-      button.addEventListener(type, event => {
-        if (event.key === 'Enter' || event.key === ' ') event.stopPropagation();
-      }, { signal: abort.signal });
+      button.addEventListener(type, stopActivationKey, { signal: abort.signal });
     }
     return button;
+  }
+
+  function getControls(like) {
+    let controls = controlsByLike.get(like);
+    if (!controls) {
+      controls = ACTIONS.map(action => ({ action, button: createButton(like, action) }));
+      controlsByLike.set(like, controls);
+    }
+    return controls;
+  }
+
+  function removeStaleButtons(row, controls = []) {
+    for (const button of row.querySelectorAll(`.${BUTTON}`)) {
+      if (!controls.some(control => control.button === button)) button.remove();
+    }
+  }
+
+  function placeControls(controls, like) {
+    let anchor = like;
+    for (let i = controls.length - 1; i >= 0; i--) {
+      const { button } = controls[i];
+      if (anchor.previousElementSibling !== button) anchor.before(button);
+      anchor = button;
+    }
   }
 
   function addButtons(row) {
     const like = row.querySelector(LIKE);
     if (!like || like.closest(ROW) !== row) {
-      row.querySelectorAll(`.${BUTTON}`).forEach(button => button.remove());
+      removeStaleButtons(row);
       return;
     }
-    let rowButtons = buttons.get(like);
-    if (!rowButtons) {
-      rowButtons = ACTIONS.map(action => createButton(like, action));
-      buttons.set(like, rowButtons);
-    }
+
+    const controls = getControls(like);
     // React may replace the Like button without replacing the row.
-    for (const stale of row.querySelectorAll(`.${BUTTON}`)) {
-      if (!rowButtons.includes(stale)) stale.remove();
-    }
-    let anchor = like;
-    for (let i = rowButtons.length - 1; i >= 0; i--) {
-      const button = rowButtons[i];
-      if (anchor.previousElementSibling !== button) anchor.before(button);
-      anchor = button;
-    }
+    removeStaleButtons(row, controls);
+    placeControls(controls, like);
     const disabled = unavailable(row, like, getTrack(row, like));
     const labels = messages();
-    rowButtons.forEach((button, index) => {
-      const label = labels[ACTIONS[index].key].label;
+    for (const { button, action } of controls) {
+      const label = labels[action.key].label;
       if (button.title !== label) {
         button.title = label;
         button.setAttribute('aria-label', label);
       }
       if (button.disabled !== disabled) button.disabled = disabled;
-    });
+    }
   }
 
   function scan(scope) {
@@ -207,17 +298,19 @@
     });
   }
 
+  function scheduleMutation(record) {
+    const target = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+    if (target?.closest(OWN_ELEMENTS)) return;
+    const row = target?.closest(ROW);
+    if (row) schedule(row);
+    for (const node of record.addedNodes) {
+      if (node.nodeType === 1 && !node.matches(OWN_ELEMENTS)) schedule(node);
+    }
+  }
+
   const observer = new MutationObserver(records => {
     if (sourceScript && !sourceScript.isConnected) return dispose();
-    for (const record of records) {
-      const target = record.target.nodeType === 1 ? record.target : record.target.parentElement;
-      if (target?.closest(`.${BUTTON}, .ps-queue-status`)) continue;
-      const row = target?.closest(ROW);
-      if (row) schedule(row);
-      for (const node of record.addedNodes) {
-        if (node.nodeType === 1 && !node.matches(`.${BUTTON}, .ps-queue-status`)) schedule(node);
-      }
-    }
+    for (const record of records) scheduleMutation(record);
   });
 
   function dispose() {
@@ -229,7 +322,7 @@
     timers.forEach(clearTimeout);
     timers.clear();
     scopes.clear();
-    document.querySelectorAll(`.${BUTTON}`).forEach(button => button.remove());
+    removeStaleButtons(document);
     status?.remove();
     if (window[INSTANCE]?.dispose === dispose) delete window[INSTANCE];
   }

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <title>Queue icon test sprites</title>
+  <!-- Stand-in shapes test symbol loading without copying the client's artwork. -->
+  <symbol id="playNext_xxs" viewBox="0 0 20 20">
+    <path fill="currentColor" d="M3 10h14v2H3zM3 15h14v2H3z" />
+  </symbol>
+  <symbol id="playLast_xxs" viewBox="0 0 20 20">
+    <path fill="currentColor" d="M3 3h14v2H3zM3 8h14v2H3z" />
+  </symbol>
+</svg>

@@ -1,14 +1,17 @@
-import { readFile, mkdir, writeFile } from 'node:fs/promises';
-import { zipSync, unzipSync } from 'fflate';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { unzipSync, zipSync } from 'fflate';
 
 const root = new URL('../', import.meta.url);
 const metadata = JSON.parse(await readFile(new URL('addon/metadata.json', root), 'utf8'));
 const names = ['metadata.json', metadata.script, metadata.css, metadata.image, 'README.md'];
 const entries = {};
 for (const name of names) {
-  entries[name] = [new Uint8Array(await readFile(new URL(`addon/${name}`, root))), {
-    mtime: new Date('2026-01-01T00:00:00Z'),
-  }];
+  entries[name] = [
+    new Uint8Array(await readFile(new URL(`addon/${name}`, root))),
+    {
+      mtime: new Date('2026-01-01T00:00:00Z'),
+    },
+  ];
 }
 const archive = zipSync(entries, { level: 9 });
 const unpacked = unzipSync(archive);
