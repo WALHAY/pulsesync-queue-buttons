@@ -11,29 +11,35 @@
   border: 0;
   border-radius: var(--ym-radius-size-round, 50%);
   background: transparent;
-  color: var(--ym-controls-color-primary-text-enabled, #a6a6a6);
+  color: var(--text-enabled-color, var(--ym-controls-color-primary-text-enabled, #a6a6a6));
   vertical-align: middle;
   cursor: pointer;
+  transition: opacity var(--ym-duration-transition, 0.15s), color var(--ym-duration-transition, 0.15s);
 }
 
 .ps-play-next-button:hover:not(:disabled),
 .ps-play-next-button:focus-visible {
-  background: var(--ym-controls-color-secondary-default-hovered, #8882);
-  color: var(--ym-controls-color-primary-text-enabled_variant, #fff);
+  color: var(--text-hovered-color, var(--ym-controls-color-primary-text-enabled_variant, #fff));
 }
 
 .ps-play-next-button:focus-visible {
-  outline: 2px solid var(--ym-controls-color-primary-default-enabled, #ffdb4d);
-  outline-offset: -2px;
+  outline: none;
+  box-shadow: 0 0 0 var(--ym-spacer-size-xxxs, 2px) var(--ym-controls-color-secondary-default-focused_stroke, #ffdb4d);
 }
 
 .ps-play-next-button:disabled {
-  opacity: 0.35;
+  color: var(--ym-controls-color-primary-text-disabled, #535353);
   cursor: default;
 }
 
 .ps-play-next-button[aria-busy="true"] {
   opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ps-play-next-button {
+    transition: none;
+  }
 }
 
 .ps-play-next-button svg {

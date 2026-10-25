@@ -15,15 +15,26 @@ const next = '[data-test-id="PULSESYNC_PLAY_NEXT_BUTTON"]';
 const like = '[data-test-id="LIKE_BUTTON"]';
 
 test.beforeEach(async ({ page }) => {
-  await page.setContent(`<!doctype html><html lang="en"><head><base href="https://music.yandex.ru/"><style>
+  // A same-origin sprite fixture exercises external SVG <use> loading without
+  // redistributing the client's artwork or depending on a real music account.
+  await page.route('https://music.yandex.ru/icons/sprite.svg', route => route.fulfill({
+    contentType: 'image/svg+xml',
+    body: '<svg xmlns="http://www.w3.org/2000/svg"><symbol id="playNext_xxs" viewBox="0 0 20 20"><path fill="currentColor" d="M3 10h14v2H3zM3 15h14v2H3z"/></symbol></svg>',
+  }));
+  await page.route('https://music.yandex.ru/', route => route.fulfill({
+    contentType: 'text/html',
+    body: `<!doctype html><html lang="en"><head><style>
     body { margin: 24px; background: #151515; color: #eee; font: 16px sans-serif; }
     section { margin-top: 24px; }
     .HorizontalCardContainer_root__native { display: flex; align-items: center; width: 100%; height: 56px; overflow: hidden; }
     .cover { flex: 0 0 40px; }
     a { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: inherit; }
-    .CommonControlsBar_root__native { display: flex; align-items: center; gap: 16px; height: 100%; }
+    .CommonControlsBar_root__native { display: flex; align-items: center; gap: 16px; height: 100%; --text-enabled-color: #a6a6a6; --text-hovered-color: #fff; }
     .CommonControlsBar_root__native > button { width: 40px; height: 40px; flex-shrink: 0; }
-  </style></head><body><div id="root"></div></body></html>`);
+    button[data-test-id="LIKE_BUTTON"], button[data-test-id="TRACK_CONTEXT_MENU_BUTTON"] { border: 0; border-radius: 50%; background: transparent; color: #a6a6a6; font-size: 20px; }
+  </style></head><body><div id="root"></div></body></html>`,
+  }));
+  await page.goto('https://music.yandex.ru/');
   await page.addScriptTag({ content: fixture.outputFiles[0].text });
   await page.addStyleTag({ path: css });
   await page.addScriptTag({ path: addon });
@@ -43,6 +54,24 @@ test('places one visible button immediately left of Like on all three surfaces',
   }
   await expect(page.locator('[data-test-id="ALBUM_CARD"]').locator(next)).toHaveCount(0);
   await expect(page.locator('section').locator(next)).toHaveCount(3);
+});
+
+test('renders the client sprite and follows track-control colors and focus styling', async ({ page }) => {
+  const button = page.locator(next).first();
+  const icon = button.locator('svg');
+  await expect.poll(() => icon.locator('use').evaluate(node => node.getBBox().width)).toBeGreaterThan(0);
+  await expect(icon).toHaveCSS('width', '20px');
+  await expect(button).toHaveCSS('width', '40px');
+  await expect(button).toHaveCSS('color', 'rgb(166, 166, 166)');
+  await button.hover();
+  await expect(button).toHaveCSS('color', 'rgb(255, 255, 255)');
+  await expect(button).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await button.press('Tab');
+  await page.keyboard.press('Shift+Tab');
+  await expect(button).toBeFocused();
+  await expect(button).not.toHaveCSS('box-shadow', 'none');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(button).toHaveCSS('transition-duration', '0s');
 });
 
 test('queues the chosen track after the current track without playback, Like, or row events', async ({ page }) => {

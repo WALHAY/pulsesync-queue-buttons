@@ -139,9 +139,10 @@
       button.type = 'button';
       button.className = BUTTON;
       button.dataset.testId = 'PULSESYNC_PLAY_NEXT_BUTTON';
-      button.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">' +
-        '<path d="M4 5h16M4 10h16M4 15h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' +
-        '<path d="m14 14 6 4-6 4z" fill="currentColor"/></svg>';
+      // Use the same built-in symbol as the native track menu. The artwork
+      // stays in the client and follows its icon updates.
+      button.innerHTML = '<svg viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">' +
+        '<use href="/icons/sprite.svg#playNext_xxs"></use></svg>';
       button.addEventListener('click', event => {
         event.preventDefault();
         event.stopPropagation();

@@ -2,7 +2,11 @@
 
 An installable PulseSync addon that puts **Play next** immediately to the **left of Like on the same track row**. Works with search rows, album tracks, liked tracks, and other playlists using Yandex Music's common row layout.
 
-Import [`dist/PlayNextInline-1.0.0.pext`](dist/PlayNextInline-1.0.0.pext) into PulseSync by dragging it onto the PulseSync window, then enable **PlayNextInline**. Enabling script addons may reload Yandex Music. See [addon instructions](addon/README.md) for usage and compatibility.
+Uses Yandex Music's native Play next icon and track-control colors, hover, and focus styling.
+
+[View the icon placement preview](docs/play-next-preview.png). This isolated preview uses the installed client's icon sprite; it is not a screenshot of an authenticated music session.
+
+Import [`dist/PlayNextInline-1.0.1.pext`](dist/PlayNextInline-1.0.1.pext) into PulseSync by dragging it onto the PulseSync window, then enable **PlayNextInline**. Enabling script addons may reload Yandex Music. See [addon instructions](addon/README.md) for usage and compatibility.
 
 ## Existing addon check
 
@@ -19,6 +23,8 @@ npm run build
 ```
 
 `addon/` contains the complete runtime: plain JavaScript, CSS, metadata, and an icon. Development dependencies are used only for testing and packaging. `npm run build` creates a ZIP with the `.pext` extension and verifies every packaged file after decompression. Metadata is at the archive root, as PulseSync's importer requires.
+
+See [publishing instructions](docs/publishing.md) for submitting the prepared release to the PulseSync catalog.
 
 ## Implementation
 
