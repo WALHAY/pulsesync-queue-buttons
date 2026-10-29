@@ -50,6 +50,7 @@ test('places both buttons left of Like, keeping Add to end closest, on all three
   await expect(page.locator(last)).toHaveCount(3);
   for (let i = 0; i < 3; i++) {
     const row = page.locator(`[data-slot="${i}"]`);
+    await row.hover();
     const button = row.locator(next);
     await expect(button).toBeVisible();
     await expect(button).toHaveAccessibleName('Play next');
@@ -77,6 +78,44 @@ test('places both buttons left of Like, keeping Add to end closest, on all three
   }
   await expect(page.locator('[data-test-id="ALBUM_CARD"]').locator(queueButtons)).toHaveCount(0);
   await expect(page.locator('section').locator(queueButtons)).toHaveCount(6);
+});
+
+test('reveals only the hovered track controls and hides them without shifting the layout', async ({
+  page,
+}) => {
+  const groups = page.locator('.ps-queue-buttons');
+  for (const group of await groups.all()) await expect(group).toHaveCSS('opacity', '0');
+
+  for (let i = 0; i < 3; i++) {
+    const row = page.locator(`[data-slot="${i}"]`);
+    const likeBefore = await row.locator(like).boundingBox();
+    await row.hover();
+    await expect(groups.nth(i)).toHaveCSS('opacity', '1');
+    for (let other = 0; other < 3; other++) {
+      if (other !== i) await expect(groups.nth(other)).toHaveCSS('opacity', '0');
+    }
+    expect(await row.locator(like).boundingBox()).toEqual(likeBefore);
+    await page.mouse.move(0, 0);
+    await expect(groups.nth(i)).toHaveCSS('opacity', '0');
+  }
+});
+
+test('Tab reveals the row controls and keeps both buttons reachable', async ({ page }) => {
+  const row = page.locator('[data-slot="0"]');
+  const group = row.locator('.ps-queue-buttons');
+  const playerLike = page.getByRole('button', { name: 'Player Like', exact: true });
+  await expect(group).toHaveCSS('opacity', '0');
+  await playerLike.focus();
+  await page.keyboard.press('Tab');
+  await expect(row.locator('[data-test-id="TRACK_TITLE"]')).toBeFocused();
+  await expect(group).toHaveCSS('opacity', '1');
+  await page.keyboard.press('Tab');
+  await expect(row.locator(next)).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(row.locator(last)).toBeFocused();
+  await expect(group).toHaveCSS('opacity', '1');
+  await playerLike.focus();
+  await expect(group).toHaveCSS('opacity', '0');
 });
 
 test('renders the client sprite and follows track-control colors and focus styling', async ({
@@ -108,6 +147,7 @@ test('renders the client sprite and follows track-control colors and focus styli
   await expect(button).not.toHaveCSS('box-shadow', 'none');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(button).toHaveCSS('transition-duration', '0s');
+  await expect(page.locator('.ps-queue-buttons').first()).toHaveCSS('transition-duration', '0s');
 });
 
 test('queues the chosen track after the current track without playback, Like, or row events', async ({
@@ -475,6 +515,7 @@ test('keeps both queue buttons and Like in one line at a narrow desktop window w
 }) => {
   await page.setViewportSize({ width: 480, height: 750 });
   const row = page.locator('[data-slot="0"]');
+  await row.hover();
   const [nextBox, endBox, likeBox, rowBox] = await Promise.all([
     row.locator(next).boundingBox(),
     row.locator(last).boundingBox(),

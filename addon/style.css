@@ -4,6 +4,13 @@
   align-items: center;
   gap: 0;
   margin-inline-end: 0.25rem;
+  opacity: 0;
+  transition: opacity var(--ym-duration-transition, 0.15s);
+}
+
+:is([class*="CommonTrack_root__"], [data-test-id="SEARCH_TRACK_CARD"]):is(:hover, :focus-within)
+  .ps-queue-buttons {
+  opacity: 1;
 }
 
 .ps-queue-button {
@@ -48,6 +55,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ps-queue-buttons,
   .ps-queue-button {
     transition: none;
   }

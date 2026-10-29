@@ -3,15 +3,7 @@ import { unzipSync, zipSync } from 'fflate';
 
 const root = new URL('../', import.meta.url);
 const metadata = JSON.parse(await readFile(new URL('addon/metadata.json', root), 'utf8'));
-const addonFiles = [
-  'metadata.json',
-  metadata.script,
-  metadata.css,
-  metadata.image,
-  'README.md',
-  'images/track-buttons.png',
-  'images/queue-actions.svg',
-];
+const addonFiles = ['metadata.json', metadata.script, metadata.css, metadata.image, 'README.md'];
 const files = [
   ...addonFiles.map(name => [name, `addon/${name}`]),
   ['LICENSE', 'LICENSE'],
